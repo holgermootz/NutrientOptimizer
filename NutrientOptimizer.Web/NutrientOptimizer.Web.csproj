@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NutrientOptimizer.Core\NutrientOptimizer.Core.csproj" />
+    <ProjectReference Include="..\NutrientOptimizer.Math\NutrientOptimizer.Math.csproj" />
   </ItemGroup>
 
 </Project>

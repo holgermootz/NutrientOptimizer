@@ -1,7 +1,145 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@using NutrientOptimizer.Core
+@using NutrientOptimizer.Core.Models
+@using NutrientOptimizer.Math
+@using NutrientOptimizer.Core.Data
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Nutrient Optimizer</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>🌱 Hydroponic Nutrient Recipe Optimizer</h1>
 
-Welcome to your new app.
+<div class="form-section">
+    <label><strong>Select Plant Profile</strong></label>
+    <select @bind="selectedProfileIndex" class="form-control">
+        @for (int i = 0; i < AvailableProfiles.Count; i++)
+        {
+            var profile = AvailableProfiles[i];
+            var index = i;
+            <!-- capture loop variable -->
+            <option value="@index">@profile.Name - @profile.Description</option>
+        }
+    </select>
+</div>
+
+<div class="form-section">
+    <label><strong>Select Available Salts</strong></label>
+    <div class="salt-grid">
+        @for (int i = 0; i < AllSalts.Count; i++)
+        {
+            var salt = AllSalts[i];
+            var index = i;
+            <!-- capture loop variable -->
+            <label class="salt-checkbox">
+                <input type="checkbox"
+                       @bind="selectedSaltIndices[index]"
+                       @bind:event="onchange" />
+                <div>
+                    <strong>@salt.Name</strong><br />
+                    <small>@salt.Formula</small>
+                </div>
+            </label>
+        }
+    </div>
+</div>
+
+<button class="btn-calculate" @onclick="Calculate" disabled="@isCalculating">
+    @if (isCalculating)
+    {
+        <span>🧮 Calculating...</span>
+    }
+    else
+    {
+        <span>🧮 Calculate Optimal Recipe</span>
+    }
+</button>
+
+@if (result != null)
+{
+    <h2 style="margin-top:40px;">📊 Optimization Result</h2>
+
+    @if (result.InfeasibilityReasons.Any())
+    {
+        <div class="warning">
+            <strong>⚠️ Warnings & Notes</strong><br /><br />
+            @foreach (var reason in result.InfeasibilityReasons)
+            {
+                @reason
+    
+                <br />
+            }
+        </div>
+    }
+
+    <div class="result">
+        <pre>@result.ToString()</pre>
+    </div>
+}
+
+@code {
+    private List<PlantProfile> AvailableProfiles = PlantProfileLibrary.Profiles.ToList();
+    private List<Salt> AllSalts = SaltLibrary.CommonSalts.ToList();
+
+    private int selectedProfileIndex = 0;
+    private Dictionary<int, bool> selectedSaltIndices = new();
+
+    private OptimizationResult? result;
+    private bool isCalculating = false;
+
+    protected override void OnInitialized()
+    {
+        // Pre-select all salts
+        for (int i = 0; i < AllSalts.Count; i++)
+        {
+            selectedSaltIndices[i] = true;
+        }
+    }
+
+    private async Task Calculate()
+    {
+        result = null;
+        isCalculating = true;
+        StateHasChanged(); // Update UI to show "Calculating..."
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                var profile = AvailableProfiles[selectedProfileIndex];
+
+                var selectedSalts = new List<Salt>();
+                for (int i = 0; i < AllSalts.Count; i++)
+                {
+                    if (selectedSaltIndices.TryGetValue(i, out bool isSelected) && isSelected)
+                    {
+                        selectedSalts.Add(AllSalts[i]);
+                    }
+                }
+
+                if (!selectedSalts.Any())
+                {
+                    result = new OptimizationResult
+                    {
+                        Success = false,
+                        InfeasibilityReasons = { "Please select at least one salt." }
+                    };
+                    return;
+                }
+
+                var optimizer = new NutrientRecipeOptimizer(selectedSalts, profile);
+                result = optimizer.Solve();
+            }
+            catch (Exception ex)
+            {
+                result = new OptimizationResult
+                {
+                    Success = false,
+                    InfeasibilityReasons = { $"Calculation error: {ex.Message}" }
+                };
+            }
+        });
+
+        isCalculating = false;
+        StateHasChanged(); // Final UI update with result
+    }
+}
