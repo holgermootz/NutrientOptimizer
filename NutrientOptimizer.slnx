@@ -2,4 +2,5 @@
   <Project Path="NutrientOptimizer.Core/NutrientOptimizer.Core.csproj" />
   <Project Path="NutrientOptimizer.Math/NutrientOptimizer.Math.csproj" />
   <Project Path="NutrientOptimizer.Tests/NutrientOptimizer.Tests.csproj" />
+  <Project Path="NutrientOptimizer.Web/NutrientOptimizer.Web.csproj" Id="e70e3b3d-7087-4a67-9e03-31acf9088d22" />
 </Solution>
