@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -7,9 +7,19 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+		<ContainerImageName>nutrient-optimizer</ContainerImageName>
+		<ContainerImageTag>latest</ContainerImageTag>
+	</PropertyGroup>	
+	
   <ItemGroup>
     <ProjectReference Include="..\NutrientOptimizer.Core\NutrientOptimizer.Core.csproj" />
     <ProjectReference Include="..\NutrientOptimizer.Math\NutrientOptimizer.Math.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
 </Project>
