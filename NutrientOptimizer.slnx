@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="NutrientOptimizer.Core/NutrientOptimizer.Core.csproj" />
+  <Project Path="NutrientOptimizer.Math/NutrientOptimizer.Math.csproj" />
+  <Project Path="NutrientOptimizer.Tests/NutrientOptimizer.Tests.csproj" />
+</Solution>
