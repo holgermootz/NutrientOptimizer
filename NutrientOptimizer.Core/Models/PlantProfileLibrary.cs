@@ -76,6 +76,7 @@ public static class PlantProfileLibrary
             {
                 new(Ion.Calcium, 100, 200, 150),   // We want 100–200 ppm Ca, ideally 150
                 new(Ion.Nitrate, 300, 600, 450),
+                new(Ion.Boron, 10, 20, 15),
                 new(Ion.Potassium, 100, 600, 450)          // Nitrate will come bundled (300–600 ppm, target 450)
             }
         }

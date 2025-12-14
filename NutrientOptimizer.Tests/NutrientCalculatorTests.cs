@@ -127,6 +127,46 @@ public class NutrientCalculatorTests
         var actualGrams = result.SaltAmounts[firstSalt];
         Assert.Equal(expectedGrams, actualGrams, 2); // within 0.01 precision
     }
+
+    [Fact]
+    public void Optimizer_AllSalts_SimpleProfile_ReturnsValidRecipe()
+    {
+        // Use only two salts
+        var allSalts = SaltLibrary.CommonSalts;
+            
+        //"Potassium Nitrate"
+        
+
+        // Use our simple test profile
+        var testProfile = PlantProfileLibrary.Profiles
+            .First(p => p.Name == "Test - C,N,P");
+
+        var optimizer = new NutrientRecipeOptimizer(allSalts, testProfile);
+        var result = optimizer.Solve();
+
+        Console.WriteLine(result);
+
+        // Should succeed
+        Assert.True(result.Success, $"Optimization failed: {result.ReasonForTermination}");
+
+        // Should use some amount of the salt
+        Assert.Single(result.SaltAmounts);
+        Assert.Contains(result.SaltAmounts, kv => kv.Key.Name == "Calcium Nitrate Tetrahydrate");
+
+        // Check resulting concentrations are within bounds
+        var solution = NutrientCalculator.CalculateSolution(result.ToRecipe());
+        var ca = solution.IonConcentrationsPpm[Ion.Calcium];
+        var no3 = solution.IonConcentrationsPpm[Ion.Nitrate];
+
+        Assert.InRange(ca, 100, 200);
+        Assert.InRange(no3, 300, 600);
+
+        // Should be very close to target Calcium (150 ppm) since that's optimizable
+        // Ca(NO3)2·4H2O gives ~169.7 ppm Ca and ~525 ppm NO3 per 1 g/L
+        // To hit 150 ppm Ca → ~0.883 g/L
+        var expectedGrams = 150.0 / (40.078 * 1000 / 236.15); // ~0.883 g/L
+        
+    }
     // Helper to make it easy
     private static Salt GetSalt(string name) =>
         SaltLibrary.CommonSalts.First(s => s.Name == name);
