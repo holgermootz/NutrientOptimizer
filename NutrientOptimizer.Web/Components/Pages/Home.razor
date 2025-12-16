@@ -5,7 +5,7 @@
 @using NutrientOptimizer.Math
 @using NutrientOptimizer.Core.Data
 @using MudBlazor
-
+    
 <PageTitle>Nutrient Optimizer</PageTitle>
 
 @if (AvailableProfiles == null || AllSalts == null)
@@ -51,8 +51,8 @@ else
                         var index = i;
                         <MudItem xs="12" sm="6" md="4">
                             <MudCheckBox T="bool" 
-                                         Checked="GetSaltSelected(index)"
-                                         CheckedChanged="@((bool value) => OnSaltToggled(index, value))"
+                                         Value="selectedSalts[index]"
+                                         ValueChanged="@(async (bool newValue) => await OnSaltChanged(index, newValue))"
                                          Dense="false"
                                          Label="@salt.Name"
                                          Class="mud-width-full" />
@@ -69,12 +69,16 @@ else
                        Color="Color.Success"
                        Size="Size.Large"
                        OnClick="Calculate"
-                       Disabled="@isCalculating"
+                       Disabled="@isButtonDisabled"
                        Class="px-8">
                 @if (isCalculating)
                 {
                     <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
                     <MudText Class="ml-2">Calculating...</MudText>
+                }
+                else if (isButtonDisabled)
+                {
+                    <MudText>🧮 Select at least one salt to calculate</MudText>
                 }
                 else
                 {
@@ -129,7 +133,8 @@ else
     private List<Salt>? AllSalts;
 
     private int selectedProfileIndex = 0;
-    private Dictionary<int, bool> selectedSaltIndices = new();
+    private List<bool> selectedSalts = new();
+    private bool isButtonDisabled = true;
 
     private OptimizationResult? result;
     private bool isCalculating = false;
@@ -142,11 +147,9 @@ else
             AvailableProfiles = PlantProfileLibrary.Profiles.ToList();
             AllSalts = SaltLibrary.CommonSalts.ToList();
 
-            // Pre-select all salts
-            for (int i = 0; i < AllSalts.Count; i++)
-            {
-                selectedSaltIndices[i] = true;
-            }
+            // Initialize all salts as not selected
+            selectedSalts = new List<bool>(new bool[AllSalts.Count]);
+            isButtonDisabled = true;
         }
         catch (Exception ex)
         {
@@ -160,14 +163,18 @@ else
         selectedProfileIndex = value;
     }
 
-    private bool GetSaltSelected(int index)
+    private void UpdateButtonState()
     {
-        return selectedSaltIndices.TryGetValue(index, out var isSelected) && isSelected;
+        bool hasSelection = selectedSalts.Any(s => s);
+        isButtonDisabled = isCalculating || !hasSelection;
+        Console.WriteLine($"UpdateButtonState: hasSelection={hasSelection}, isCalculating={isCalculating}, isButtonDisabled={isButtonDisabled}");
     }
 
-    private void OnSaltToggled(int index, bool value)
+    private async Task OnSaltChanged(int index, bool newValue)
     {
-        selectedSaltIndices[index] = value;
+        selectedSalts[index] = newValue;
+        UpdateButtonState();
+        StateHasChanged();
     }
 
     private async Task Calculate()
@@ -184,16 +191,16 @@ else
             {
                 var profile = AvailableProfiles[selectedProfileIndex];
 
-                var selectedSalts = new List<Salt>();
-                for (int i = 0; i < AllSalts.Count; i++)
+                var selectedSaltList = new List<Salt>();
+                for (int i = 0; i < selectedSalts.Count; i++)
                 {
-                    if (selectedSaltIndices.TryGetValue(i, out bool isSelected) && isSelected)
+                    if (selectedSalts[i] && i < AllSalts.Count)
                     {
-                        selectedSalts.Add(AllSalts[i]);
+                        selectedSaltList.Add(AllSalts[i]);
                     }
                 }
 
-                if (!selectedSalts.Any())
+                if (!selectedSaltList.Any())
                 {
                     result = new OptimizationResult
                     {
@@ -203,7 +210,7 @@ else
                     return;
                 }
 
-                var optimizer = new NutrientRecipeOptimizer(selectedSalts, profile);
+                var optimizer = new NutrientRecipeOptimizer(selectedSaltList, profile);
                 result = optimizer.Solve();
             }
             catch (Exception ex)

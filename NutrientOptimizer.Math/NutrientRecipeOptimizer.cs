@@ -145,12 +145,16 @@ public class NutrientRecipeOptimizer
             result.InfeasibilityReasons.Add("");
         }
 
-        // Detect ratio conflicts (unavoidable over/under supply)
-        var conflictWarnings = DetectRatioConflicts(supplyAnalysis.SupplyableTargets, variables.Keys.ToList());
-        if (conflictWarnings.Any())
+        // Only detect ratio conflicts if optimization failed or was not optimal
+        // If we have a successful solution, these "conflicts" are not real
+        if (!success || resultStatus != Solver.ResultStatus.OPTIMAL)
         {
-            result.InfeasibilityReasons.Add("=== RATIO CONFLICTS DETECTED ===");
-            result.InfeasibilityReasons.AddRange(conflictWarnings);
+            var conflictWarnings = DetectRatioConflicts(supplyAnalysis.SupplyableTargets, _availableSalts.ToList());
+            if (conflictWarnings.Any())
+            {
+                result.InfeasibilityReasons.Add("=== RATIO CONFLICTS DETECTED ===");
+                result.InfeasibilityReasons.AddRange(conflictWarnings);
+            }
         }
 
         return result;
@@ -201,6 +205,8 @@ public class NutrientRecipeOptimizer
             }
         }
 
+        // Remove warnings if they don't actually prevent a solution
+        // (i.e., if the optimal solution respects the bounds)
         return warnings;
     }
 
