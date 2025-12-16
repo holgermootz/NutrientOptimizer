@@ -19,31 +19,41 @@ else
 {
     <MudStack Spacing="3">
         <!-- Plant Profile Selection -->
-        <MudPaper Elevation="1" Class="pa-6">
-            <MudStack Spacing="2">
-                <MudText Typo="Typo.h6" Class="mud-text-secondary">Select Plant Profile</MudText>
-                <MudSelect T="int" 
-                           Value="selectedProfileIndex" 
-                           ValueChanged="OnProfileChanged"
-                           Variant="Variant.Outlined" 
-                           AnchorOrigin="Origin.BottomCenter"
-                           Label="Choose a plant profile">
-                    @for (int i = 0; i < AvailableProfiles.Count; i++)
-                    {
-                        var profile = AvailableProfiles[i];
-                        var index = i;
-                        <MudSelectItem T="int" Value="@index">
-                            <strong>@profile.Name</strong> - @profile.Description
-                        </MudSelectItem>
-                    }
-                </MudSelect>
+        <MudPaper Elevation="0" Class="pa-6 mb-6">
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.h6" Style="font-weight: 400; letter-spacing: 0.5px;">PLANT PROFILE</MudText>
+                @if (AvailableProfiles != null)
+                {
+                    <MudSelect T="int" 
+                               Value="selectedProfileIndex" 
+                               ValueChanged="OnProfileChanged"
+                               Variant="Variant.Outlined" 
+                               AnchorOrigin="Origin.BottomCenter"
+                               Label="Please select a plant profile"
+                               Dense="false">
+                        @if (selectedProfileIndex == -1)
+                        {
+                            <MudSelectItem T="int" Value="-1">
+                                <MudText Class="mud-text-secondary">Please select a plant profile</MudText>
+                            </MudSelectItem>
+                        }
+                        @for (int i = 0; i < AvailableProfiles.Count; i++)
+                        {
+                            var profile = AvailableProfiles[i];
+                            var index = i;
+                            <MudSelectItem T="int" Value="@index">
+                                <strong>@profile.Name</strong> — @profile.Description
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                }
             </MudStack>
         </MudPaper>
 
         <!-- Salt Selection -->
-        <MudPaper Elevation="1" Class="pa-6">
+        <MudPaper Elevation="0" Class="pa-6 mb-6">
             <MudStack Spacing="3">
-                <MudText Typo="Typo.h6" Class="mud-text-secondary">Select Available Salts</MudText>
+                <MudText Typo="Typo.h6" Style="font-weight: 400; letter-spacing: 0.5px;">AVAILABLE SALTS</MudText>
                 <MudGrid Spacing="2">
                     @for (int i = 0; i < AllSalts.Count; i++)
                     {
@@ -56,7 +66,7 @@ else
                                          Dense="false"
                                          Label="@salt.Name"
                                          Class="mud-width-full" />
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary ml-6">@salt.Formula</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary ml-6" Style="font-weight: 400;">@salt.Formula</MudText>
                         </MudItem>
                     }
                 </MudGrid>
@@ -64,25 +74,30 @@ else
         </MudPaper>
 
         <!-- Calculate Button -->
-        <MudStack AlignItems="AlignItems.Center">
+        <MudStack AlignItems="AlignItems.Center" Class="my-6">
             <MudButton Variant="Variant.Filled"
                        Color="Color.Success"
                        Size="Size.Large"
                        OnClick="Calculate"
-                       Disabled="@isButtonDisabled"
-                       Class="px-8">
+                       Disabled="@(isButtonDisabled || selectedProfileIndex < 0)"
+                       Class="px-8"
+                       Style="min-width: 280px; font-weight: 500; letter-spacing: 0.5px;">
                 @if (isCalculating)
                 {
                     <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                    <MudText Class="ml-2">Calculating...</MudText>
+                    <MudText Class="ml-2">CALCULATING...</MudText>
+                }
+                else if (selectedProfileIndex < 0)
+                {
+                    <MudText>SELECT PROFILE & SALTS</MudText>
                 }
                 else if (isButtonDisabled)
                 {
-                    <MudText>🧮 Select at least one salt to calculate</MudText>
+                    <MudText>SELECT SALTS TO CONTINUE</MudText>
                 }
                 else
                 {
-                    <MudText>🧮 Calculate Optimal Recipe</MudText>
+                    <MudText>CALCULATE RECIPE</MudText>
                 }
             </MudButton>
         </MudStack>
@@ -90,36 +105,39 @@ else
         <!-- Results Section -->
         @if (result != null)
         {
-            <MudPaper Elevation="1" Class="pa-6">
+            <MudPaper Elevation="0" Class="pa-6 mt-8">
                 <MudStack Spacing="3">
-                    <MudText Typo="Typo.h6">📊 Optimization Result</MudText>
+                    <MudText Typo="Typo.h6" Style="font-weight: 400; letter-spacing: 0.5px;">OPTIMIZATION RESULT</MudText>
 
                     @if (result.InfeasibilityReasons.Any())
                     {
-                        <MudAlert Severity="Severity.Warning" Dense="false">
+                        <MudAlert Severity="Severity.Warning" Dense="false" Class="mt-4">
                             <MudStack Spacing="1">
-                                <MudText Typo="Typo.body2"><strong>⚠️ Warnings & Notes</strong></MudText>
+                                <MudText Typo="Typo.body2"><strong>NOTES</strong></MudText>
                                 @foreach (var reason in result.InfeasibilityReasons)
                                 {
-                                    <MudText Typo="Typo.body2">• @reason</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-size: 0.9rem;">• @reason</MudText>
                                 }
                             </MudStack>
                         </MudAlert>
                     }
 
-                    <MudPaper Elevation="0" Class="pa-4" Style="background-color: var(--mud-palette-surface);">
+                    <MudPaper Elevation="0" Class="pa-4 mt-4" Style="background-color: #fafaf8; border: 1px solid #e8e8e3;">
                         @if (result.Success)
                         {
                             <MudStack Spacing="2">
-                                <MudText Typo="Typo.body1"><strong>✅ Success!</strong></MudText>
+                                <MudText Typo="Typo.body1"><strong>✓ SUCCESS</strong></MudText>
                                 <MudDivider />
-                                <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Courier New', monospace; font-size: 0.9rem;">@result.ToString()</MudText>
+                                <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.6;">@result.ToString()</MudText>
                             </MudStack>
                         }
                         else
                         {
-                            <MudText Typo="Typo.body1" Color="Color.Error"><strong>❌ Optimization Failed</strong></MudText>
-                            <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Courier New', monospace; font-size: 0.9rem;">@result.ToString()</MudText>
+                            <MudStack Spacing="2">
+                                <MudText Typo="Typo.body1" Color="Color.Error"><strong>✗ FAILED</strong></MudText>
+                                <MudDivider />
+                                <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.6;">@result.ToString()</MudText>
+                            </MudStack>
                         }
                     </MudPaper>
                 </MudStack>
@@ -132,7 +150,7 @@ else
     private List<PlantProfile>? AvailableProfiles;
     private List<Salt>? AllSalts;
 
-    private int selectedProfileIndex = 0;
+    private int selectedProfileIndex = -1;
     private List<bool> selectedSalts = new();
     private bool isButtonDisabled = true;
 
@@ -180,6 +198,18 @@ else
     private async Task Calculate()
     {
         if (AvailableProfiles == null || AllSalts == null) return;
+
+        // Validate profile selection
+        if (selectedProfileIndex < 0 || selectedProfileIndex >= AvailableProfiles.Count)
+        {
+            result = new OptimizationResult
+            {
+                Success = false,
+                InfeasibilityReasons = { "Please select a valid plant profile." }
+            };
+            StateHasChanged();
+            return;
+        }
 
         result = null;
         isCalculating = true;

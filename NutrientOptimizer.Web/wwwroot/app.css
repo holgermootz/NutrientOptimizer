@@ -1,205 +1,181 @@
-/* Global styles */
+/* Global styles - Sage/Offwhite/Black ISO/DIN design */
+:root {
+    --color-sage: #556b5c;
+    --color-sage-light: #7a8a7d;
+    --color-sage-dark: #3a4a3f;
+    --color-offwhite: #f5f5f1;
+    --color-black: #1a1a1a;
+    --color-accent: #556b5c;
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #f0f7f0 0%, #e8f5e9 100%);
-    color: #2d3b2d;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--color-offwhite);
+    color: var(--color-black);
     margin: 0;
     padding: 0;
     min-height: 100vh;
 }
 
-h1 {
-    color: #1b5e20;
-    text-align: center;
-    margin: 40px 0 20px;
-    font-weight: 600;
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 400;
+    letter-spacing: 0.5px;
 }
 
-/* Form sections */
-.form-section {
-    background: white;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-    margin: 20px auto;
-    max-width: 900px;
-    border: 1px solid #e0e0e0;
-}
-
-    .form-section label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 12px;
-        color: #2e7d32;
-        font-size: 1.1rem;
-    }
-
-/* Dropdown */
-.form-control {
-    width: 100%;
-    max-width: 500px;
-    padding: 12px 16px;
-    font-size: 1rem;
-    border: 2px solid #c8e6c9;
-    border-radius: 10px;
-    background-color: #f1f8e9;
-    transition: border-color 0.3s;
-}
-
-    .form-control:focus {
-        outline: none;
-        border-color: #4caf50;
-        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
-    }
-
-/* Salt selection grid */
-.salt-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    margin-top: 20px;
-}
-
-.salt-checkbox {
-    display: flex;
-    align-items: center;
-    background: #f8fff8;
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid #dcedc8;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-    .salt-checkbox:hover {
-        background: #f0faf0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        transform: translateY(-2px);
-    }
-
-    .salt-checkbox input[type="checkbox"] {
-        margin-right: 16px;
-        width: 20px;
-        height: 20px;
-        accent-color: #4caf50;
-    }
-
-/* Calculate button */
-.btn-calculate {
-    display: block;
-    margin: 40px auto;
-    background: linear-gradient(to right, #4caf50, #388e3c);
-    color: white;
-    padding: 16px 40px;
-    font-size: 1.2rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
-    transition: all 0.3s ease;
-}
-
-    .btn-calculate:hover:not(:disabled) {
-        background: linear-gradient(to right, #43a047, #2e7d32);
-        transform: translateY(-3px);
-        box-shadow: 0 12px 25px rgba(76, 175, 80, 0.4);
-    }
-
-    .btn-calculate:disabled {
-        background: #a5d6a7;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-
-/* Result sections */
-.result {
-    background: #e8f5e8;
-    padding: 30px;
-    border-radius: 16px;
-    margin: 30px auto;
-    max-width: 900px;
-    border-left: 6px solid #4caf50;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-    white-space: pre-line;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 1rem;
-    line-height: 1.8;
-    color: #1b5e20;
-}
-
-.result-text {
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-    line-height: 1.8;
-    white-space: pre-line;
-}
-
-.warning {
-    background: #fff8e1;
-    color: #855a00;
-    padding: 20px;
-    border-radius: 12px;
-    border-left: 6px solid #ffc107;
-    margin: 30px auto;
-    max-width: 900px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-    font-size: 1.05rem;
-}
-
-/* Alert styling */
-.mud-alert {
-    border-radius: 12px;
-}
-
-/* Improve readability of form elements */
-.mud-select-item {
-    padding: 12px 16px;
+/* MudBlazor Theme Overrides */
+.mud-appbar {
+    background-color: var(--color-sage) !important;
+    color: var(--color-offwhite) !important;
 }
 
 .mud-paper {
-    background-color: #f9fdf9 !important;
+    background-color: var(--color-offwhite) !important;
+    border: 1px solid #e8e8e3 !important;
 }
 
-/* Custom styling for checkboxes */
+.mud-text {
+    letter-spacing: 0.3px;
+}
+
+.mud-text-secondary {
+    color: var(--color-sage) !important;
+}
+
+/* Form elements */
+.mud-input-control input,
+.mud-input-control textarea {
+    color: var(--color-black) !important;
+    border-color: #d0d0c8 !important;
+}
+
+.mud-input-control input:focus,
+.mud-input-control textarea:focus {
+    border-color: var(--color-sage) !important;
+    box-shadow: 0 0 0 2px rgba(85, 107, 92, 0.1) !important;
+}
+
+.mud-select {
+    border-color: #d0d0c8 !important;
+}
+
+.mud-select-item {
+    padding: 12px 16px;
+    color: var(--color-black);
+}
+
+.mud-select-item:hover {
+    background-color: rgba(85, 107, 92, 0.08) !important;
+}
+
+.mud-select-item.selected {
+    background-color: rgba(85, 107, 92, 0.12) !important;
+}
+
+/* Checkboxes */
 .mud-checkbox .mud-icon {
-    color: #4caf50;
+    color: var(--color-sage) !important;
 }
 
-/* Button styling */
+.mud-checkbox:hover {
+    background-color: rgba(85, 107, 92, 0.05) !important;
+}
+
+/* Buttons */
 .mud-button-filled-success {
-    background-color: #4caf50;
-    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+    background-color: var(--color-sage) !important;
+    color: var(--color-offwhite) !important;
+    box-shadow: 0 2px 8px rgba(85, 107, 92, 0.15) !important;
+    font-weight: 500;
+    letter-spacing: 0.5px;
 }
 
-    .mud-button-filled-success:hover {
-        background-color: #43a047;
-        box-shadow: 0 12px 25px rgba(76, 175, 80, 0.4);
-    }
+.mud-button-filled-success:hover:not(:disabled) {
+    background-color: var(--color-sage-dark) !important;
+    box-shadow: 0 4px 12px rgba(85, 107, 92, 0.25) !important;
+}
+
+.mud-button-filled-success:disabled {
+    background-color: #d0d0c8 !important;
+    color: #a0a099 !important;
+    cursor: not-allowed;
+}
+
+.mud-button-text {
+    color: var(--color-sage) !important;
+    font-weight: 500;
+}
+
+/* Alerts */
+.mud-alert {
+    border-radius: 4px;
+    border-left: 3px solid var(--color-sage);
+}
+
+.mud-alert-severity-warning {
+    background-color: rgba(85, 107, 92, 0.08) !important;
+    color: var(--color-black) !important;
+}
+
+.mud-alert-severity-error {
+    background-color: rgba(180, 120, 110, 0.08) !important;
+    color: var(--color-black) !important;
+}
+
+.mud-alert-severity-success {
+    background-color: rgba(85, 107, 92, 0.08) !important;
+    color: var(--color-black) !important;
+}
+
+/* Progress circle */
+.mud-progress-circular {
+    color: var(--color-sage) !important;
+}
+
+/* Divider */
+.mud-divider {
+    background-color: #d0d0c8 !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-offwhite);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-sage);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-sage-dark);
+}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .form-section, .result, .warning {
-        margin: 15px;
-        padding: 20px;
-    }
-
-    .salt-grid {
-        grid-template-columns: 1fr;
-    }
-
-    h1 {
-        font-size: 1.8rem;
-    }
-}
-
-@media (max-width: 600px) {
     .mud-container {
         padding: 16px;
     }
 
     .mud-paper {
         padding: 16px !important;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        font-size: 14px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    h2 {
+        font-size: 20px;
     }
 }
