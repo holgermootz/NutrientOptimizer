@@ -11,6 +11,15 @@
     <MudAppBar Elevation="0">
         <MudText Typo="Typo.h6" Class="ml-4" Style="font-weight: 400; letter-spacing: 1px;">🌱 NUTRIENT OPTIMIZER</MudText>
         <MudSpacer />
+        <MudNavMenu Margin="Margin.Dense" Style="display: flex; gap: 16px; align-items: center;">
+            <MudLink Href="/" Match="NavLinkMatch.All" Style="text-decoration: none; color: inherit;">
+                <MudText Typo="Typo.body2" Style="font-weight: 500; letter-spacing: 0.5px;">HOME</MudText>
+            </MudLink>
+            <MudLink Href="/substances" Match="NavLinkMatch.All" Style="text-decoration: none; color: inherit;">
+                <MudText Typo="Typo.body2" Style="font-weight: 500; letter-spacing: 0.5px;">SUBSTANCES</MudText>
+            </MudLink>
+        </MudNavMenu>
+        <MudSpacer />
     </MudAppBar>
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">

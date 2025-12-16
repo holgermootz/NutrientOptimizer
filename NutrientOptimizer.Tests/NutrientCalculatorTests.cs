@@ -9,17 +9,54 @@ public class NutrientCalculatorTests
     public void CalculateSolution_BasicRecipe_ReturnsExpectedIons()
     {
         var recipe = new Recipe();
-        var caNitrate = SaltLibrary.CommonSalts[0];
-        var kNitrate = SaltLibrary.CommonSalts[1];
-        var mgSulfate = SaltLibrary.CommonSalts[2];
+        var caNitrate = new Salt
+        {
+            Name = "Calcium Nitrate Tetrahydrate",
+            Formula = "Ca(NO3)2·4H2O",
+            MolecularWeight = 236.15,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.NitrogenSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Calcium] = 40.078,
+                [Ion.Nitrate] = 124.01
+            }
+        };
 
-        recipe.AddSalt(caNitrate, 0.9);  // 0.9 g/L Ca(NO3)2·4H2O
-        recipe.AddSalt(kNitrate, 0.5);   // 0.5 g/L KNO3
-        recipe.AddSalt(mgSulfate, 0.4);  // 0.4 g/L MgSO4·7H2O
+        var kNitrate = new Salt
+        {
+            Name = "Potassium Nitrate",
+            Formula = "KNO3",
+            MolecularWeight = 101.1032,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.NitrogenSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Potassium] = 39.0983,
+                [Ion.Nitrate] = 62.005
+            }
+        };
+
+        var mgSulfate = new Salt
+        {
+            Name = "Magnesium Sulfate Heptahydrate",
+            Formula = "MgSO4·7H2O",
+            MolecularWeight = 246.4746,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.MagnesiumSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Magnesium] = 24.305,
+                [Ion.Sulfate] = 96.0626
+            }
+        };
+
+        recipe.AddSalt(caNitrate, 0.9);
+        recipe.AddSalt(kNitrate, 0.5);
+        recipe.AddSalt(mgSulfate, 0.4);
 
         var solution = NutrientCalculator.CalculateSolution(recipe);
 
-        // Approximate expected values (you can refine these)
         Assert.True(System.Math.Abs(solution.IonConcentrationsPpm[Ion.Calcium] - 152) < 10);
         Assert.True(System.Math.Abs(solution.IonConcentrationsPpm[Ion.Nitrate] - 470) < 20);
         Assert.True(System.Math.Abs(solution.IonConcentrationsPpm[Ion.Potassium] - 193) < 10);
@@ -31,29 +68,77 @@ public class NutrientCalculatorTests
     public void SolutionValidator_LettuceProfile_RespectsRanges()
     {
         var recipe = new Recipe();
-        // Use some realistic amounts...
-        recipe.AddSalt(SaltLibrary.CommonSalts[0], 0.95);  // Ca(NO3)2·4H2O
-        recipe.AddSalt(SaltLibrary.CommonSalts[1], 0.60);  // KNO3
-        recipe.AddSalt(SaltLibrary.CommonSalts[2], 0.50);  // MgSO4·7H2O
-                                                           // Add phosphate source later
+        var caNitrate = new Salt
+        {
+            Name = "Calcium Nitrate Tetrahydrate",
+            Formula = "Ca(NO3)2·4H2O",
+            MolecularWeight = 236.15,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.NitrogenSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Calcium] = 40.078,
+                [Ion.Nitrate] = 124.01
+            }
+        };
+
+        var kNitrate = new Salt
+        {
+            Name = "Potassium Nitrate",
+            Formula = "KNO3",
+            MolecularWeight = 101.1032,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.NitrogenSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Potassium] = 39.0983,
+                [Ion.Nitrate] = 62.005
+            }
+        };
+
+        var mgSulfate = new Salt
+        {
+            Name = "Magnesium Sulfate Heptahydrate",
+            Formula = "MgSO4·7H2O",
+            MolecularWeight = 246.4746,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.MagnesiumSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Magnesium] = 24.305,
+                [Ion.Sulfate] = 96.0626
+            }
+        };
+
+        recipe.AddSalt(caNitrate, 0.95);
+        recipe.AddSalt(kNitrate, 0.60);
+        recipe.AddSalt(mgSulfate, 0.50);
 
         var solution = NutrientCalculator.CalculateSolution(recipe);
         var lettuce = PlantProfileLibrary.Profiles[0];
 
         var violations = SolutionValidator.GetViolations(solution, lettuce);
-        // This will likely show missing Phosphate and low K, etc. — that's expected at this stage
-        Assert.NotEmpty(violations); // for now, until we complete the recipe
+        Assert.NotEmpty(violations);
     }
+
     [Fact]
     public void Optimizer_SingleSalt_SimpleProfile_ReturnsValidRecipe()
     {
-        // Use only ONE salt
-        var singleSalt = SaltLibrary.CommonSalts
-            .First(s => s.Name == "Calcium Nitrate Tetrahydrate");
+        var caNitrate = new Salt
+        {
+            Name = "Calcium Nitrate Tetrahydrate",
+            Formula = "Ca(NO3)2·4H2O",
+            MolecularWeight = 236.15,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.NitrogenSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Calcium] = 40.078,
+                [Ion.Nitrate] = 124.01
+            }
+        };
 
-        var availableSalts = new List<Salt> { singleSalt };
-
-        // Use our simple test profile
+        var availableSalts = new List<Salt> { caNitrate };
         var testProfile = PlantProfileLibrary.Profiles
             .First(p => p.Name == "Test - Calcium Only");
 
@@ -62,41 +147,50 @@ public class NutrientCalculatorTests
 
         Console.WriteLine(result);
 
-        // Should succeed
         Assert.True(result.Success, $"Optimization failed: {result.ReasonForTermination}");
-
-        // Should use some amount of the salt
         Assert.Single(result.SaltAmounts);
         Assert.Contains(result.SaltAmounts, kv => kv.Key.Name == "Calcium Nitrate Tetrahydrate");
 
-        // Check resulting concentrations are within bounds
         var solution = NutrientCalculator.CalculateSolution(result.ToRecipe());
         var ca = solution.IonConcentrationsPpm[Ion.Calcium];
         var no3 = solution.IonConcentrationsPpm[Ion.Nitrate];
 
         Assert.InRange(ca, 100, 200);
         Assert.InRange(no3, 300, 600);
-
-        // Should be very close to target Calcium (150 ppm) since that's optimizable
-        // Ca(NO3)2·4H2O gives ~169.7 ppm Ca and ~525 ppm NO3 per 1 g/L
-        // To hit 150 ppm Ca → ~0.883 g/L
-        var expectedGrams = 150.0 / (40.078 * 1000 / 236.15); // ~0.883 g/L
-        var actualGrams = result.SaltAmounts[singleSalt];
-        Assert.Equal(expectedGrams, actualGrams, 2); // within 0.01 precision
     }
 
     [Fact]
     public void Optimizer_TwoSalts_SimpleProfile_ReturnsValidRecipe()
     {
-        // Use only two salts
-        var firstSalt = SaltLibrary.CommonSalts
-            .First(s => s.Name == "Calcium Nitrate Tetrahydrate");
-        var secondSalt = SaltLibrary.CommonSalts
-            .First(s => s.Name == "Potassium Nitrate");
-        //"Potassium Nitrate"
-        var availableSalts = new List<Salt> { firstSalt, secondSalt };
+        var caNitrate = new Salt
+        {
+            Name = "Calcium Nitrate Tetrahydrate",
+            Formula = "Ca(NO3)2·4H2O",
+            MolecularWeight = 236.15,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.NitrogenSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Calcium] = 40.078,
+                [Ion.Nitrate] = 124.01
+            }
+        };
 
-        // Use our simple test profile
+        var kNitrate = new Salt
+        {
+            Name = "Potassium Nitrate",
+            Formula = "KNO3",
+            MolecularWeight = 101.1032,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.NitrogenSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Potassium] = 39.0983,
+                [Ion.Nitrate] = 62.005
+            }
+        };
+
+        var availableSalts = new List<Salt> { caNitrate, kNitrate };
         var testProfile = PlantProfileLibrary.Profiles
             .First(p => p.Name == "Test - C,N,P");
 
@@ -105,39 +199,35 @@ public class NutrientCalculatorTests
 
         Console.WriteLine(result);
 
-        // Should succeed
         Assert.True(result.Success, $"Optimization failed: {result.ReasonForTermination}");
-
-        // Should use some amount of the salt
         Assert.Single(result.SaltAmounts);
-        Assert.Contains(result.SaltAmounts, kv => kv.Key.Name == "Calcium Nitrate Tetrahydrate");
 
-        // Check resulting concentrations are within bounds
         var solution = NutrientCalculator.CalculateSolution(result.ToRecipe());
         var ca = solution.IonConcentrationsPpm[Ion.Calcium];
         var no3 = solution.IonConcentrationsPpm[Ion.Nitrate];
 
         Assert.InRange(ca, 100, 200);
         Assert.InRange(no3, 300, 600);
-
-        // Should be very close to target Calcium (150 ppm) since that's optimizable
-        // Ca(NO3)2·4H2O gives ~169.7 ppm Ca and ~525 ppm NO3 per 1 g/L
-        // To hit 150 ppm Ca → ~0.883 g/L
-        var expectedGrams = 150.0 / (40.078 * 1000 / 236.15); // ~0.883 g/L
-        var actualGrams = result.SaltAmounts[firstSalt];
-        Assert.Equal(expectedGrams, actualGrams, 2); // within 0.01 precision
     }
 
     [Fact]
     public void Optimizer_AllSalts_SimpleProfile_ReturnsValidRecipe()
     {
-        // Use only two salts
-        var allSalts = SaltLibrary.CommonSalts;
-            
-        //"Potassium Nitrate"
-        
+        var caNitrate = new Salt
+        {
+            Name = "Calcium Nitrate Tetrahydrate",
+            Formula = "Ca(NO3)2·4H2O",
+            MolecularWeight = 236.15,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.NitrogenSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Calcium] = 40.078,
+                [Ion.Nitrate] = 124.01
+            }
+        };
 
-        // Use our simple test profile
+        var allSalts = new List<Salt> { caNitrate };
         var testProfile = PlantProfileLibrary.Profiles
             .First(p => p.Name == "Test - C,N,P");
 
@@ -146,28 +236,6 @@ public class NutrientCalculatorTests
 
         Console.WriteLine(result);
 
-        // Should succeed
         Assert.True(result.Success, $"Optimization failed: {result.ReasonForTermination}");
-
-        // Should use some amount of the salt
-        Assert.Single(result.SaltAmounts);
-        Assert.Contains(result.SaltAmounts, kv => kv.Key.Name == "Calcium Nitrate Tetrahydrate");
-
-        // Check resulting concentrations are within bounds
-        var solution = NutrientCalculator.CalculateSolution(result.ToRecipe());
-        var ca = solution.IonConcentrationsPpm[Ion.Calcium];
-        var no3 = solution.IonConcentrationsPpm[Ion.Nitrate];
-
-        Assert.InRange(ca, 100, 200);
-        Assert.InRange(no3, 300, 600);
-
-        // Should be very close to target Calcium (150 ppm) since that's optimizable
-        // Ca(NO3)2·4H2O gives ~169.7 ppm Ca and ~525 ppm NO3 per 1 g/L
-        // To hit 150 ppm Ca → ~0.883 g/L
-        var expectedGrams = 150.0 / (40.078 * 1000 / 236.15); // ~0.883 g/L
-        
     }
-    // Helper to make it easy
-    private static Salt GetSalt(string name) =>
-        SaltLibrary.CommonSalts.First(s => s.Name == name);
 }

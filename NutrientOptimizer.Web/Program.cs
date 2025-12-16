@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using NutrientOptimizer.Core.Data;
 using NutrientOptimizer.Web.Components;
+using NutrientOptimizer.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,13 +16,28 @@ builder.Services.AddMudServices();
 builder.Services.AddDbContext<NutrientDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Add custom services
+builder.Services.AddScoped<DatabaseInitializationService>();
+builder.Services.AddScoped<SaltDatabaseService>();
+
 var app = builder.Build();
+
+// Initialize database on startup
+var dbInitService = app.Services.CreateScope().ServiceProvider.GetRequiredService<DatabaseInitializationService>();
+try
+{
+    dbInitService.InitializeDatabaseAsync().GetAwaiter().GetResult();
+    Console.WriteLine("? Database initialization completed successfully");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"ERROR during database initialization: {ex.Message}");
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);

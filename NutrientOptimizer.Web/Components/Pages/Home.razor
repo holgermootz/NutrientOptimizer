@@ -2,9 +2,11 @@
 @rendermode InteractiveServer
 @using NutrientOptimizer.Core
 @using NutrientOptimizer.Core.Models
-@using NutrientOptimizer.Math
 @using NutrientOptimizer.Core.Data
+@using NutrientOptimizer.Math
+@using NutrientOptimizer.Web.Services
 @using MudBlazor
+@inject SaltDatabaseService SaltService
     
 <PageTitle>Nutrient Optimizer</PageTitle>
 
@@ -14,6 +16,12 @@
         <MudProgressCircular Indeterminate="true" />
         <MudText>Loading...</MudText>
     </MudStack>
+}
+else if (AllSalts.Count == 0)
+{
+    <MudAlert Severity="Severity.Error">
+        No salts loaded from database. Please ensure the database has been initialized.
+    </MudAlert>
 }
 else
 {
@@ -53,23 +61,78 @@ else
         <!-- Salt Selection -->
         <MudPaper Elevation="0" Class="pa-6 mb-6">
             <MudStack Spacing="3">
-                <MudText Typo="Typo.h6" Style="font-weight: 400; letter-spacing: 0.5px;">AVAILABLE SALTS</MudText>
-                <MudGrid Spacing="2">
-                    @for (int i = 0; i < AllSalts.Count; i++)
-                    {
-                        var salt = AllSalts[i];
-                        var index = i;
-                        <MudItem xs="12" sm="6" md="4">
-                            <MudCheckBox T="bool" 
-                                         Value="selectedSalts[index]"
-                                         ValueChanged="@(async (bool newValue) => await OnSaltChanged(index, newValue))"
-                                         Dense="false"
-                                         Label="@salt.Name"
-                                         Class="mud-width-full" />
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary ml-6" Style="font-weight: 400;">@salt.Formula</MudText>
-                        </MudItem>
-                    }
-                </MudGrid>
+                <MudText Typo="Typo.h6" Style="font-weight: 400; letter-spacing: 0.5px;">AVAILABLE SALTS (@AllSalts.Count)</MudText>
+                
+                @{
+                    var groupedSalts = AllSalts.GroupBy(s => s.Category).OrderBy(g => g.Key);
+                }
+
+                @foreach (var categoryGroup in groupedSalts)
+                {
+                    var categoryKey = $"cat_{categoryGroup.Key}";
+                    <MudExpansionPanel @key="categoryKey" DefaultExpanded="true">
+                        <TitleContent>
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: 500; letter-spacing: 0.3px; color: #556b5c;">
+                                @(categoryGroup.Key == SaltCategory.Macronutrient ? "🌾 MACRONUTRIENTS" : "🔬 MICRONUTRIENTS")
+                            </MudText>
+                        </TitleContent>
+                        <ChildContent>
+                            <MudStack Spacing="1">
+                                @{
+                                    var saltGroups = categoryGroup.GroupBy(s => s.Group).OrderBy(g => g.Key);
+                                }
+
+                                @foreach (var saltGroup in saltGroups)
+                                {
+                                    var groupKey = $"group_{saltGroup.Key}";
+                                    var groupName = GetGroupDisplayName(saltGroup.Key);
+                                    
+                                    <MudExpansionPanel @key="groupKey" Dense="true">
+                                        <TitleContent>
+                                            <MudText Typo="Typo.body2" Style="font-weight: 500; letter-spacing: 0.2px;">
+                                                @groupName (@saltGroup.Count())
+                                            </MudText>
+                                        </TitleContent>
+                                        <ChildContent>
+                                            <MudGrid Spacing="2">
+                                                @{
+                                                    var sortedSalts = saltGroup
+                                                        .OrderByDescending(s => s.IonContributions.Values.Max())
+                                                        .ToList();
+                                                }
+
+                                                @foreach (var salt in sortedSalts)
+                                                {
+                                                    var saltIndex = AllSalts.IndexOf(salt);
+                                                    var maxIon = GetMaxIonInfo(salt);
+                                                    
+                                                    <MudItem xs="12" sm="6" md="4">
+                                                        <MudCheckBox T="bool" 
+                                                                     Value="selectedSalts[saltIndex]"
+                                                                     ValueChanged="@(async (bool newValue) => await OnSaltChanged(saltIndex, newValue))"
+                                                                     Dense="false"
+                                                                     Class="mud-width-full">
+                                                            <MudStack Spacing="1" Class="mud-width-full">
+                                                                <MudText Typo="Typo.body2" Style="font-weight: 500;">@salt.Name</MudText>
+                                                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@salt.Formula</MudText>
+                                                                <MudText Typo="Typo.caption" Style="color: #7a8a7d; font-size: 0.75rem;">
+                                                                    ✓ @salt.GetIonSummary()
+                                                                </MudText>
+                                                                <MudText Typo="Typo.caption" Style="color: #9db5a8; font-size: 0.7rem;">
+                                                                    Primary: @maxIon.ionName (@maxIon.amount:F2 g/mol)
+                                                                </MudText>
+                                                            </MudStack>
+                                                        </MudCheckBox>
+                                                    </MudItem>
+                                                }
+                                            </MudGrid>
+                                        </ChildContent>
+                                    </MudExpansionPanel>
+                                }
+                            </MudStack>
+                        </ChildContent>
+                    </MudExpansionPanel>
+                }
             </MudStack>
         </MudPaper>
 
@@ -161,13 +224,13 @@ else
     {
         try
         {
-            // Initialize collections safely
             AvailableProfiles = PlantProfileLibrary.Profiles.ToList();
-            AllSalts = SaltLibrary.CommonSalts.ToList();
+            AllSalts = SaltService.GetAllSalts();
 
-            // Initialize all salts as not selected
-            selectedSalts = new List<bool>(new bool[AllSalts.Count]);
+            selectedSalts = new List<bool>(new bool[AllSalts?.Count ?? 0]);
             isButtonDisabled = true;
+
+            Console.WriteLine($"Loaded {AllSalts?.Count ?? 0} salts from database");
         }
         catch (Exception ex)
         {
@@ -185,7 +248,6 @@ else
     {
         bool hasSelection = selectedSalts.Any(s => s);
         isButtonDisabled = isCalculating || !hasSelection;
-        Console.WriteLine($"UpdateButtonState: hasSelection={hasSelection}, isCalculating={isCalculating}, isButtonDisabled={isButtonDisabled}");
     }
 
     private async Task OnSaltChanged(int index, bool newValue)
@@ -199,7 +261,6 @@ else
     {
         if (AvailableProfiles == null || AllSalts == null) return;
 
-        // Validate profile selection
         if (selectedProfileIndex < 0 || selectedProfileIndex >= AvailableProfiles.Count)
         {
             result = new OptimizationResult
@@ -255,5 +316,31 @@ else
 
         isCalculating = false;
         StateHasChanged();
+    }
+
+    private string GetGroupDisplayName(SaltGroup group)
+    {
+        return group switch
+        {
+            SaltGroup.NitrogenSource => "Nitrogen Sources",
+            SaltGroup.PhosphorusSource => "Phosphorus Sources",
+            SaltGroup.PotassiumSource => "Potassium Sources",
+            SaltGroup.CalciumSource => "Calcium Sources",
+            SaltGroup.MagnesiumSource => "Magnesium Sources",
+            SaltGroup.SulfurSource => "Sulfur Sources",
+            SaltGroup.IronSource => "Iron Sources",
+            SaltGroup.ManganeseSource => "Manganese Sources",
+            SaltGroup.ZincSource => "Zinc Sources",
+            SaltGroup.CopperSource => "Copper Sources",
+            SaltGroup.BoronSource => "Boron Sources",
+            SaltGroup.MolybdenumSource => "Molybdenum Sources",
+            _ => group.ToString()
+        };
+    }
+
+    private (string ionName, double amount) GetMaxIonInfo(Salt salt)
+    {
+        var maxIon = salt.IonContributions.OrderByDescending(x => x.Value).First();
+        return (maxIon.Key.ToString(), maxIon.Value);
     }
 }

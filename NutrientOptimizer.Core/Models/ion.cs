@@ -14,5 +14,8 @@ public enum Ion
     Zinc,         // Zn
     Copper,       // Cu
     Boron,        // B
-    Molybdenum    // Mo
+    Molybdenum,   // Mo
+    Sodium,       // Na
+    Silicon,      // Si
+    Chlorine      // Cl
 }

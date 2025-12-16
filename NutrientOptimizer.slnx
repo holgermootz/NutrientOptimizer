@@ -3,6 +3,10 @@
     <File Path="Dockerfile" />
     <File Path="README.md" />
   </Folder>
+  <Folder Name="/Solution Items/data/">
+    <File Path="data/init/substances_win.csv" />
+    <File Path="data/init/substances_win_orig.csv" />
+  </Folder>
   <Project Path="NutrientOptimizer.Core/NutrientOptimizer.Core.csproj" />
   <Project Path="NutrientOptimizer.Math/NutrientOptimizer.Math.csproj" />
   <Project Path="NutrientOptimizer.Tests/NutrientOptimizer.Tests.csproj" />

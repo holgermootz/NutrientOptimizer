@@ -19,7 +19,11 @@ public class SaltRepository
             Name = e.Name,
             Formula = e.Formula,
             MolecularWeight = e.MolecularWeight,
-            IonContributions = e.Contributions.ToDictionary(c => c.Ion, c => c.GramsPerMole)
+            Category = Enum.Parse<SaltCategory>(e.Category, ignoreCase: true),
+            Group = Enum.Parse<SaltGroup>(e.Group, ignoreCase: true),
+            IonContributions = e.Contributions.ToDictionary(
+                c => Enum.Parse<Ion>(c.Ion, ignoreCase: true), 
+                c => c.GramsPerMole)
         }).ToList();
     }
 }

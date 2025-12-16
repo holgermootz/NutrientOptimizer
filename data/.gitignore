@@ -1,0 +1,8 @@
+# Data folder - contains database and seed files
+# Database files are generated at runtime, not tracked
+*.db
+*.db-shm
+*.db-wal
+
+# Keep the directory structure
+!.gitkeep
