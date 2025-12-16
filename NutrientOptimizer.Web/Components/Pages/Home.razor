@@ -4,81 +4,129 @@
 @using NutrientOptimizer.Core.Models
 @using NutrientOptimizer.Math
 @using NutrientOptimizer.Core.Data
+@using MudBlazor
 
 <PageTitle>Nutrient Optimizer</PageTitle>
 
-<h1>🌱 Hydroponic Nutrient Recipe Optimizer</h1>
-
-<div class="form-section">
-    <label><strong>Select Plant Profile</strong></label>
-    <select @bind="selectedProfileIndex" class="form-control">
-        @for (int i = 0; i < AvailableProfiles.Count; i++)
-        {
-            var profile = AvailableProfiles[i];
-            var index = i;
-            <!-- capture loop variable -->
-            <option value="@index">@profile.Name - @profile.Description</option>
-        }
-    </select>
-</div>
-
-<div class="form-section">
-    <label><strong>Select Available Salts</strong></label>
-    <div class="salt-grid">
-        @for (int i = 0; i < AllSalts.Count; i++)
-        {
-            var salt = AllSalts[i];
-            var index = i;
-            <!-- capture loop variable -->
-            <label class="salt-checkbox">
-                <input type="checkbox"
-                       @bind="selectedSaltIndices[index]"
-                       @bind:event="onchange" />
-                <div>
-                    <strong>@salt.Name</strong><br />
-                    <small>@salt.Formula</small>
-                </div>
-            </label>
-        }
-    </div>
-</div>
-
-<button class="btn-calculate" @onclick="Calculate" disabled="@isCalculating">
-    @if (isCalculating)
-    {
-        <span>🧮 Calculating...</span>
-    }
-    else
-    {
-        <span>🧮 Calculate Optimal Recipe</span>
-    }
-</button>
-
-@if (result != null)
+@if (AvailableProfiles == null || AllSalts == null)
 {
-    <h2 style="margin-top:40px;">📊 Optimization Result</h2>
+    <MudStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Style="min-height: 300px;">
+        <MudProgressCircular Indeterminate="true" />
+        <MudText>Loading...</MudText>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <!-- Plant Profile Selection -->
+        <MudPaper Elevation="1" Class="pa-6">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" Class="mud-text-secondary">Select Plant Profile</MudText>
+                <MudSelect T="int" 
+                           Value="selectedProfileIndex" 
+                           ValueChanged="OnProfileChanged"
+                           Variant="Variant.Outlined" 
+                           AnchorOrigin="Origin.BottomCenter"
+                           Label="Choose a plant profile">
+                    @for (int i = 0; i < AvailableProfiles.Count; i++)
+                    {
+                        var profile = AvailableProfiles[i];
+                        var index = i;
+                        <MudSelectItem T="int" Value="@index">
+                            <strong>@profile.Name</strong> - @profile.Description
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudStack>
+        </MudPaper>
 
-    @if (result.InfeasibilityReasons.Any())
-    {
-        <div class="warning">
-            <strong>⚠️ Warnings & Notes</strong><br /><br />
-            @foreach (var reason in result.InfeasibilityReasons)
-            {
-                @reason
-    
-                <br />
-            }
-        </div>
-    }
+        <!-- Salt Selection -->
+        <MudPaper Elevation="1" Class="pa-6">
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.h6" Class="mud-text-secondary">Select Available Salts</MudText>
+                <MudGrid Spacing="2">
+                    @for (int i = 0; i < AllSalts.Count; i++)
+                    {
+                        var salt = AllSalts[i];
+                        var index = i;
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudCheckBox T="bool" 
+                                         Checked="GetSaltSelected(index)"
+                                         CheckedChanged="@((bool value) => OnSaltToggled(index, value))"
+                                         Dense="false"
+                                         Label="@salt.Name"
+                                         Class="mud-width-full" />
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary ml-6">@salt.Formula</MudText>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudStack>
+        </MudPaper>
 
-    <div class="result">
-        <pre>@result.ToString()</pre>
-    </div>
+        <!-- Calculate Button -->
+        <MudStack AlignItems="AlignItems.Center">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Success"
+                       Size="Size.Large"
+                       OnClick="Calculate"
+                       Disabled="@isCalculating"
+                       Class="px-8">
+                @if (isCalculating)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ml-2">Calculating...</MudText>
+                }
+                else
+                {
+                    <MudText>🧮 Calculate Optimal Recipe</MudText>
+                }
+            </MudButton>
+        </MudStack>
+
+        <!-- Results Section -->
+        @if (result != null)
+        {
+            <MudPaper Elevation="1" Class="pa-6">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">📊 Optimization Result</MudText>
+
+                    @if (result.InfeasibilityReasons.Any())
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="false">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.body2"><strong>⚠️ Warnings & Notes</strong></MudText>
+                                @foreach (var reason in result.InfeasibilityReasons)
+                                {
+                                    <MudText Typo="Typo.body2">• @reason</MudText>
+                                }
+                            </MudStack>
+                        </MudAlert>
+                    }
+
+                    <MudPaper Elevation="0" Class="pa-4" Style="background-color: var(--mud-palette-surface);">
+                        @if (result.Success)
+                        {
+                            <MudStack Spacing="2">
+                                <MudText Typo="Typo.body1"><strong>✅ Success!</strong></MudText>
+                                <MudDivider />
+                                <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Courier New', monospace; font-size: 0.9rem;">@result.ToString()</MudText>
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body1" Color="Color.Error"><strong>❌ Optimization Failed</strong></MudText>
+                            <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Courier New', monospace; font-size: 0.9rem;">@result.ToString()</MudText>
+                        }
+                    </MudPaper>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
 }
 
 @code {
-    private List<PlantProfile> AvailableProfiles = PlantProfileLibrary.Profiles.ToList();
-    private List<Salt> AllSalts = SaltLibrary.CommonSalts.ToList();
+    private List<PlantProfile>? AvailableProfiles;
+    private List<Salt>? AllSalts;
 
     private int selectedProfileIndex = 0;
     private Dictionary<int, bool> selectedSaltIndices = new();
@@ -88,18 +136,47 @@
 
     protected override void OnInitialized()
     {
-        // Pre-select all salts
-        for (int i = 0; i < AllSalts.Count; i++)
+        try
         {
-            selectedSaltIndices[i] = true;
+            // Initialize collections safely
+            AvailableProfiles = PlantProfileLibrary.Profiles.ToList();
+            AllSalts = SaltLibrary.CommonSalts.ToList();
+
+            // Pre-select all salts
+            for (int i = 0; i < AllSalts.Count; i++)
+            {
+                selectedSaltIndices[i] = true;
+            }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during initialization: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+    }
+
+    private void OnProfileChanged(int value)
+    {
+        selectedProfileIndex = value;
+    }
+
+    private bool GetSaltSelected(int index)
+    {
+        return selectedSaltIndices.TryGetValue(index, out var isSelected) && isSelected;
+    }
+
+    private void OnSaltToggled(int index, bool value)
+    {
+        selectedSaltIndices[index] = value;
     }
 
     private async Task Calculate()
     {
+        if (AvailableProfiles == null || AllSalts == null) return;
+
         result = null;
         isCalculating = true;
-        StateHasChanged(); // Update UI to show "Calculating..."
+        StateHasChanged();
 
         await Task.Run(() =>
         {
@@ -140,6 +217,6 @@
         });
 
         isCalculating = false;
-        StateHasChanged(); // Final UI update with result
+        StateHasChanged();
     }
 }

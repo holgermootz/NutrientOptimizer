@@ -129,6 +129,13 @@ h1 {
     color: #1b5e20;
 }
 
+.result-text {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.8;
+    white-space: pre-line;
+}
+
 .warning {
     background: #fff8e1;
     color: #855a00;
@@ -140,6 +147,36 @@ h1 {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
     font-size: 1.05rem;
 }
+
+/* Alert styling */
+.mud-alert {
+    border-radius: 12px;
+}
+
+/* Improve readability of form elements */
+.mud-select-item {
+    padding: 12px 16px;
+}
+
+.mud-paper {
+    background-color: #f9fdf9 !important;
+}
+
+/* Custom styling for checkboxes */
+.mud-checkbox .mud-icon {
+    color: #4caf50;
+}
+
+/* Button styling */
+.mud-button-filled-success {
+    background-color: #4caf50;
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+}
+
+    .mud-button-filled-success:hover {
+        background-color: #43a047;
+        box-shadow: 0 12px 25px rgba(76, 175, 80, 0.4);
+    }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -154,5 +191,15 @@ h1 {
 
     h1 {
         font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .mud-container {
+        padding: 16px;
+    }
+
+    .mud-paper {
+        padding: 16px !important;
     }
 }
