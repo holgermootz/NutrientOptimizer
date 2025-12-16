@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path="Dockerfile" />
+    <File Path="README.md" />
   </Folder>
   <Project Path="NutrientOptimizer.Core/NutrientOptimizer.Core.csproj" />
   <Project Path="NutrientOptimizer.Math/NutrientOptimizer.Math.csproj" />
