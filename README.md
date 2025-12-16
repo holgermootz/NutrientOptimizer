@@ -1,10 +1,10 @@
-# ?? Nutrient Optimizer
+#  Nutrient Optimizer
 
 > **Precision Hydroponic Nutrition for Sustainable Plant Growth**
 
-A sophisticated nutrient recipe optimization system built with .NET 10 and Blazor. This application uses advanced linear programming to calculate precise salt combinations that meet exact plant nutrient requirements—because plant lives matter, and they deserve the best.
+A sophisticated nutrient recipe optimization system built with .NET 10 and Blazor. This application uses advanced linear programming to calculate precise salt combinations that meet exact plant nutrient requirementsâ€”because plant lives matter, and they deserve the best.
 
-## ?? Our Mission
+##  Our Mission
 
 Hydroponic farming represents one of humanity's most promising paths toward sustainable agriculture. By growing plants without soil, we can:
 
@@ -15,7 +15,7 @@ Hydroponic farming represents one of humanity's most promising paths toward sust
 
 But hydroponic systems demand precision. Plants are living organisms with exacting nutritional needs. A single imbalance in ion concentration can stunt growth, reduce yields, or compromise plant health. This is where Nutrient Optimizer comes in.
 
-## ?? Why This Matters
+##  Why This Matters
 
 Traditional nutrient recipe development relies on:
 - **Guesswork and approximation** - Leading to suboptimal plant performance
@@ -27,41 +27,41 @@ Traditional nutrient recipe development relies on:
 
 ## ? Features
 
-### ?? Advanced Optimization Engine
+###  Advanced Optimization Engine
 - **Linear programming solver** (Google OR-Tools) for mathematically optimal solutions
 - **Multi-ion constraints** - Simultaneously balances macronutrients (N, P, K, Ca, Mg, S) and micronutrients (Fe, Mn, Zn, Cu, B, Mo)
 - **Infeasibility detection** - Automatically identifies nutrient ratios that cannot be achieved with available salts
 - **Precision calculations** - Minimizes deviation from target concentrations to <0.1 ppm
 
-### ?? Comprehensive Plant Profiles
+###  Comprehensive Plant Profiles
 - Pre-configured profiles for common crops (Lettuce, Tomato, Basil)
 - Extensible library for custom plant species and growth stages
 - Target-based formulation (set minimum, maximum, and ideal concentrations)
 - EC (Electrical Conductivity) bounds for system monitoring
 
-### ?? Extensive Salt Library
+###  Extensive Salt Library
 - Pre-loaded common salts with precise molecular weights and ion compositions
 - Easy addition of regional or specialty salt sources
 - Support for fertilizers with complex ion profiles
 
-### ?? Clean, Intuitive Interface
+###  Clean, Intuitive Interface
 - ISO/DIN design philosophy for clarity and professionalism
 - Sage/offwhite/black minimalist color scheme
 - Responsive Material Design (MudBlazor)
 - Accessible form controls for all users
 
-### ?? Transparent Results
+###  Transparent Results
 - Detailed recipe output (salt amounts in g/L)
 - Resulting ion concentrations in ppm
 - Deviation metrics showing optimization quality
 - Warnings for unsupplyable nutrients
 
-### ?? Production-Ready Deployment
+###  Production-Ready Deployment
 - Docker support for Windows x64 and ARM64 (Raspberry Pi)
 - SQLite for local data persistence
 - Entity Framework Core for extensible data management
 
-## ??? Technology Stack
+## ? Technology Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -72,7 +72,7 @@ Traditional nutrient recipe development relies on:
 | **Database** | SQLite |
 | **Deployment** | Docker (multi-arch) |
 
-## ?? Quick Start
+##  Quick Start
 
 ### Prerequisites
 - .NET 10 SDK ([Download](https://dotnet.microsoft.com/download/dotnet/10.0))
@@ -101,7 +101,7 @@ Navigate to `https://localhost:5001` in your browser.
 dotnet test NutrientOptimizer.Tests
 ```
 
-## ?? Usage
+##  Usage
 
 1. **Select a Plant Profile**
    - Choose from Lettuce, Tomato, or test profiles
@@ -142,39 +142,39 @@ Recipe (g/L):
 Total deviation from targets: 0.0%
 ```
 
-## ?? Project Structure
+##  Project Structure
 
 ```
 NutrientOptimizer/
-??? NutrientOptimizer.Web/
-?   ??? Components/Pages/Home.razor       # Main optimization UI
-?   ??? Layout/MainLayout.razor           # App shell
-?   ??? Program.cs                        # Dependency injection
-?   ??? appsettings.json                  # Configuration
+? NutrientOptimizer.Web/
+?   ? Components/Pages/Home.razor       # Main optimization UI
+?   ? Layout/MainLayout.razor           # App shell
+?   ? Program.cs                        # Dependency injection
+?   ? appsettings.json                  # Configuration
 ?
-??? NutrientOptimizer.Core/
-?   ??? Models/
-?   ?   ??? Salt.cs                       # Salt definition
-?   ?   ??? Ion.cs                        # Ion enumeration
-?   ?   ??? PlantProfile.cs               # Plant nutrient targets
-?   ?   ??? SaltLibrary.cs                # Common salts database
-?   ??? Data/
-?   ?   ??? NutrientDbContext.cs          # Entity Framework context
-?   ?   ??? SaltRepository.cs             # Data access layer
-?   ??? NutrientCalculator.cs             # Ion concentration math
-?   ??? SolutionValidator.cs              # Target validation
+? NutrientOptimizer.Core/
+?   ? Models/
+?   ?   ? Salt.cs                       # Salt definition
+?   ?   ? Ion.cs                        # Ion enumeration
+?   ?   ? PlantProfile.cs               # Plant nutrient targets
+?   ?   ? SaltLibrary.cs                # Common salts database
+?   ? Data/
+?   ?   ? NutrientDbContext.cs          # Entity Framework context
+?   ?   ? SaltRepository.cs             # Data access layer
+?   ? NutrientCalculator.cs             # Ion concentration math
+?   ? SolutionValidator.cs              # Target validation
 ?
-??? NutrientOptimizer.Math/
-?   ??? NutrientRecipeOptimizer.cs        # LP solver wrapper
-?   ??? OptimizationResult.cs             # Result data model
+? NutrientOptimizer.Math/
+?   ? NutrientRecipeOptimizer.cs        # LP solver wrapper
+?   ? OptimizationResult.cs             # Result data model
 ?
-??? NutrientOptimizer.Tests/
-?   ??? NutrientCalculatorTests.cs        # Unit & integration tests
+? NutrientOptimizer.Tests/
+?   ? NutrientCalculatorTests.cs        # Unit & integration tests
 ?
-??? Dockerfile                            # Multi-arch container config
+? Dockerfile                            # Multi-arch container config
 ```
 
-## ?? Configuration
+##  Configuration
 
 ### Database
 
@@ -228,7 +228,7 @@ new Salt
 }
 ```
 
-## ?? Docker Deployment
+##  Docker Deployment
 
 ### Build
 
@@ -246,7 +246,7 @@ Access at `http://localhost:8080`
 
 **Multi-architecture:** Supports Windows x64 and Raspberry Pi ARM64
 
-## ?? How It Works
+##  How It Works
 
 ### The Optimization Problem
 
@@ -269,7 +269,7 @@ Nutrient Optimizer solves a **Linear Programming problem**:
 4. **Calculate results** - Determine actual ion concentrations
 5. **Display** - Show recipe and validation metrics
 
-## ?? Sustainable Agriculture & Resource Stewardship
+##  Sustainable Agriculture & Resource Stewardship
 
 This project embodies principles of environmental responsibility:
 
@@ -281,7 +281,7 @@ This project embodies principles of environmental responsibility:
 
 By optimizing nutrient solutions to mathematical precision, we ensure every drop of water and every atom of fertilizer contributes meaningfully to plant growth. **Plant lives matter.** They deserve our best efforts.
 
-## ?? Contributing
+##  Contributing
 
 We welcome contributions from farmers, researchers, and developers! 
 
@@ -293,11 +293,11 @@ To contribute:
 4. Push to branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## ?? License
+##  License
 
 MIT License - See LICENSE file for details
 
-## ?? Acknowledgments
+##  Acknowledgments
 
 - [.NET 10](https://dotnet.microsoft.com/) - Modern cross-platform development
 - [MudBlazor](https://mudblazor.com/) - Beautiful Material Design UI
@@ -310,4 +310,4 @@ MIT License - See LICENSE file for details
 **Status:** ? Production Ready  
 **Last Updated:** December 2024  
 
-**Made with ?? for plants and people.**
+**Made with  for plants and people.**
