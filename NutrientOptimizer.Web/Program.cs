@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using NutrientOptimizer.Core.Data;
 using NutrientOptimizer.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Add DbContext
+builder.Services.AddDbContext<NutrientDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 

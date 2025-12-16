@@ -10,13 +10,24 @@ public class NutrientDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Configure SaltEntity -> Ion enum as string key
+        // Configure SaltEntity
         modelBuilder.Entity<SaltEntity>()
             .Property(s => s.Id)
             .ValueGeneratedOnAdd();
 
+        modelBuilder.Entity<SaltEntity>()
+            .HasMany(s => s.Contributions)
+            .WithOne(c => c.Salt)
+            .HasForeignKey(sc => sc.SaltId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure SaltContribution with surrogate PK and unique constraint
         modelBuilder.Entity<SaltContribution>()
-            .HasKey(sc => new { sc.SaltId, sc.Ion });
+            .HasKey(sc => sc.Id);
+
+        modelBuilder.Entity<SaltContribution>()
+            .HasIndex(sc => new { sc.SaltId, sc.Ion })
+            .IsUnique();
 
         modelBuilder.Entity<SaltContribution>()
             .Property(sc => sc.Ion)
@@ -36,7 +47,10 @@ public class SaltEntity
 
 public class SaltContribution
 {
-    public int SaltId { get; set; }
+    public int Id { get; set; }           // ← Surrogate primary key
+    public int SaltId { get; set; }       // Foreign key
     public Ion Ion { get; set; }
-    public double GramsPerMole { get; set; }  // elemental mass per mole of salt
+    public double GramsPerMole { get; set; }
+    
+    public SaltEntity Salt { get; set; } = null!;  // Navigation property
 }
