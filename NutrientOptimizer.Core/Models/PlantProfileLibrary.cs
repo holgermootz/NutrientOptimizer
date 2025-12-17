@@ -288,7 +288,7 @@ public static class PlantProfileLibrary
         new PlantProfile
         {
             Name = "Test - Calcium Only",
-            Description = "Very simple profile: only Calcium and Nitrate from one salt",
+            Description = "Very simple profile: only Calcium and Nitrate",
             IonTargets = new List<IonTarget>
             {
                 new(Ion.Calcium, 100, 200, 150),
@@ -297,14 +297,15 @@ public static class PlantProfileLibrary
         },
         new PlantProfile
         {
-            Name = "Test - C,N,P",
-            Description = "Simple profile: only Calcium, Nitrate, and Potassium",
+            Name = "Test - Three Macros",
+            Description = "Simple profile: Calcium, Nitrate, Potassium, Magnesium, Sulfate",
             IonTargets = new List<IonTarget>
             {
                 new(Ion.Calcium, 100, 200, 150),
                 new(Ion.Nitrate, 300, 600, 450),
-                new(Ion.Boron, 10, 20, 15),
-                new(Ion.Potassium, 100, 600, 450)
+                new(Ion.Potassium, 150, 300, 200),
+                new(Ion.Magnesium, 30, 80, 50),
+                new(Ion.Sulfate, 50, 200, 100),
             }
         }
     };

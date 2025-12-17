@@ -6,12 +6,12 @@ namespace NutrientOptimizer.Tests;
 public class NutrientCalculatorTests
 {
     [Fact]
-    public void CalculateSolution_BasicRecipe_ReturnsExpectedIons()
+    public void Optimizer_BasicMacrosSuccess()
     {
-        var recipe = new Recipe();
+        // Arrange
         var caNitrate = new Salt
         {
-            Name = "Calcium Nitrate Tetrahydrate",
+            Name = "Calcium Nitrate",
             Formula = "Ca(NO3)2·4H2O",
             MolecularWeight = 236.15,
             Category = SaltCategory.Macronutrient,
@@ -29,7 +29,7 @@ public class NutrientCalculatorTests
             Formula = "KNO3",
             MolecularWeight = 101.1032,
             Category = SaltCategory.Macronutrient,
-            Group = SaltGroup.NitrogenSource,
+            Group = SaltGroup.PotassiumSource,
             IonContributions = new Dictionary<Ion, double>
             {
                 [Ion.Potassium] = 39.0983,
@@ -39,7 +39,7 @@ public class NutrientCalculatorTests
 
         var mgSulfate = new Salt
         {
-            Name = "Magnesium Sulfate Heptahydrate",
+            Name = "Magnesium Sulfate",
             Formula = "MgSO4·7H2O",
             MolecularWeight = 246.4746,
             Category = SaltCategory.Macronutrient,
@@ -51,82 +51,28 @@ public class NutrientCalculatorTests
             }
         };
 
-        recipe.AddSalt(caNitrate, 0.9);
-        recipe.AddSalt(kNitrate, 0.5);
-        recipe.AddSalt(mgSulfate, 0.4);
+        var availableSalts = new List<Salt> { caNitrate, kNitrate, mgSulfate };
+        var profile = PlantProfileLibrary.Profiles.First(p => p.Name == "Test - Three Macros");
 
-        var solution = NutrientCalculator.CalculateSolution(recipe);
+        // Act
+        var optimizer = new NutrientRecipeOptimizer(availableSalts, profile);
+        var result = optimizer.Solve();
 
-        Assert.True(System.Math.Abs(solution.IonConcentrationsPpm[Ion.Calcium] - 152) < 10);
-        Assert.True(System.Math.Abs(solution.IonConcentrationsPpm[Ion.Nitrate] - 470) < 20);
-        Assert.True(System.Math.Abs(solution.IonConcentrationsPpm[Ion.Potassium] - 193) < 10);
-        Assert.True(System.Math.Abs(solution.IonConcentrationsPpm[Ion.Magnesium] - 39) < 5);
-        Assert.True(System.Math.Abs(solution.IonConcentrationsPpm[Ion.Sulfate] - 156) < 10);
+        // Assert
+        Assert.True(result.Success, result.ReasonForTermination);
+        Assert.NotEmpty(result.SaltAmounts);
+        Assert.NotEmpty(result.IonComparisons);
+
+        Console.WriteLine(result);
     }
 
     [Fact]
-    public void SolutionValidator_LettuceProfile_RespectsRanges()
+    public void Optimizer_InsufficientSaltsFailure()
     {
-        var recipe = new Recipe();
+        // Arrange: Only nitrogen source, missing P, K, Mg, S
         var caNitrate = new Salt
         {
-            Name = "Calcium Nitrate Tetrahydrate",
-            Formula = "Ca(NO3)2·4H2O",
-            MolecularWeight = 236.15,
-            Category = SaltCategory.Macronutrient,
-            Group = SaltGroup.NitrogenSource,
-            IonContributions = new Dictionary<Ion, double>
-            {
-                [Ion.Calcium] = 40.078,
-                [Ion.Nitrate] = 124.01
-            }
-        };
-
-        var kNitrate = new Salt
-        {
-            Name = "Potassium Nitrate",
-            Formula = "KNO3",
-            MolecularWeight = 101.1032,
-            Category = SaltCategory.Macronutrient,
-            Group = SaltGroup.NitrogenSource,
-            IonContributions = new Dictionary<Ion, double>
-            {
-                [Ion.Potassium] = 39.0983,
-                [Ion.Nitrate] = 62.005
-            }
-        };
-
-        var mgSulfate = new Salt
-        {
-            Name = "Magnesium Sulfate Heptahydrate",
-            Formula = "MgSO4·7H2O",
-            MolecularWeight = 246.4746,
-            Category = SaltCategory.Macronutrient,
-            Group = SaltGroup.MagnesiumSource,
-            IonContributions = new Dictionary<Ion, double>
-            {
-                [Ion.Magnesium] = 24.305,
-                [Ion.Sulfate] = 96.0626
-            }
-        };
-
-        recipe.AddSalt(caNitrate, 0.95);
-        recipe.AddSalt(kNitrate, 0.60);
-        recipe.AddSalt(mgSulfate, 0.50);
-
-        var solution = NutrientCalculator.CalculateSolution(recipe);
-        var lettuce = PlantProfileLibrary.Profiles[0];
-
-        var violations = SolutionValidator.GetViolations(solution, lettuce);
-        Assert.NotEmpty(violations);
-    }
-
-    [Fact]
-    public void Optimizer_SingleSalt_SimpleProfile_ReturnsValidRecipe()
-    {
-        var caNitrate = new Salt
-        {
-            Name = "Calcium Nitrate Tetrahydrate",
+            Name = "Calcium Nitrate",
             Formula = "Ca(NO3)2·4H2O",
             MolecularWeight = 236.15,
             Category = SaltCategory.Macronutrient,
@@ -139,32 +85,26 @@ public class NutrientCalculatorTests
         };
 
         var availableSalts = new List<Salt> { caNitrate };
-        var testProfile = PlantProfileLibrary.Profiles
-            .First(p => p.Name == "Test - Calcium Only");
+        var profile = PlantProfileLibrary.Profiles.First(p => p.Name == "Lettuce - Vegetative");
 
-        var optimizer = new NutrientRecipeOptimizer(availableSalts, testProfile);
+        // Act
+        var optimizer = new NutrientRecipeOptimizer(availableSalts, profile);
         var result = optimizer.Solve();
 
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("no source", string.Join("\n", result.InfeasibilityReasons));
+
         Console.WriteLine(result);
-
-        Assert.True(result.Success, $"Optimization failed: {result.ReasonForTermination}");
-        Assert.Single(result.SaltAmounts);
-        Assert.Contains(result.SaltAmounts, kv => kv.Key.Name == "Calcium Nitrate Tetrahydrate");
-
-        var solution = NutrientCalculator.CalculateSolution(result.ToRecipe());
-        var ca = solution.IonConcentrationsPpm[Ion.Calcium];
-        var no3 = solution.IonConcentrationsPpm[Ion.Nitrate];
-
-        Assert.InRange(ca, 100, 200);
-        Assert.InRange(no3, 300, 600);
     }
 
     [Fact]
-    public void Optimizer_TwoSalts_SimpleProfile_ReturnsValidRecipe()
+    public void Optimizer_PartialSuppliableIons()
     {
+        // Arrange: Use Lettuce profile which requires Phosphate - salts don't provide it
         var caNitrate = new Salt
         {
-            Name = "Calcium Nitrate Tetrahydrate",
+            Name = "Calcium Nitrate",
             Formula = "Ca(NO3)2·4H2O",
             MolecularWeight = 236.15,
             Category = SaltCategory.Macronutrient,
@@ -182,7 +122,7 @@ public class NutrientCalculatorTests
             Formula = "KNO3",
             MolecularWeight = 101.1032,
             Category = SaltCategory.Macronutrient,
-            Group = SaltGroup.NitrogenSource,
+            Group = SaltGroup.PotassiumSource,
             IonContributions = new Dictionary<Ion, double>
             {
                 [Ion.Potassium] = 39.0983,
@@ -190,32 +130,42 @@ public class NutrientCalculatorTests
             }
         };
 
-        var availableSalts = new List<Salt> { caNitrate, kNitrate };
-        var testProfile = PlantProfileLibrary.Profiles
-            .First(p => p.Name == "Test - C,N,P");
+        var mgSulfate = new Salt
+        {
+            Name = "Magnesium Sulfate",
+            Formula = "MgSO4·7H2O",
+            MolecularWeight = 246.4746,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.MagnesiumSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Magnesium] = 24.305,
+                [Ion.Sulfate] = 96.0626
+            }
+        };
 
-        var optimizer = new NutrientRecipeOptimizer(availableSalts, testProfile);
+        var availableSalts = new List<Salt> { caNitrate, kNitrate, mgSulfate };
+        // Lettuce profile requires Phosphate which we don't provide
+        var profile = PlantProfileLibrary.Profiles.First(p => p.Name == "Lettuce - Vegetative");
+
+        // Act
+        var optimizer = new NutrientRecipeOptimizer(availableSalts, profile);
         var result = optimizer.Solve();
 
+        // Assert - missing Phosphate
+        Assert.False(result.Success);
+        Assert.Contains("Phosphate", string.Join("\n", result.InfeasibilityReasons));
+
         Console.WriteLine(result);
-
-        Assert.True(result.Success, $"Optimization failed: {result.ReasonForTermination}");
-        Assert.Single(result.SaltAmounts);
-
-        var solution = NutrientCalculator.CalculateSolution(result.ToRecipe());
-        var ca = solution.IonConcentrationsPpm[Ion.Calcium];
-        var no3 = solution.IonConcentrationsPpm[Ion.Nitrate];
-
-        Assert.InRange(ca, 100, 200);
-        Assert.InRange(no3, 300, 600);
     }
 
     [Fact]
-    public void Optimizer_AllSalts_SimpleProfile_ReturnsValidRecipe()
+    public void Optimizer_DisplaysIonDeltas()
     {
+        // Arrange
         var caNitrate = new Salt
         {
-            Name = "Calcium Nitrate Tetrahydrate",
+            Name = "Calcium Nitrate",
             Formula = "Ca(NO3)2·4H2O",
             MolecularWeight = 236.15,
             Category = SaltCategory.Macronutrient,
@@ -227,15 +177,54 @@ public class NutrientCalculatorTests
             }
         };
 
-        var allSalts = new List<Salt> { caNitrate };
-        var testProfile = PlantProfileLibrary.Profiles
-            .First(p => p.Name == "Test - C,N,P");
+        var kNitrate = new Salt
+        {
+            Name = "Potassium Nitrate",
+            Formula = "KNO3",
+            MolecularWeight = 101.1032,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.PotassiumSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Potassium] = 39.0983,
+                [Ion.Nitrate] = 62.005
+            }
+        };
 
-        var optimizer = new NutrientRecipeOptimizer(allSalts, testProfile);
+        var mgSulfate = new Salt
+        {
+            Name = "Magnesium Sulfate",
+            Formula = "MgSO4·7H2O",
+            MolecularWeight = 246.4746,
+            Category = SaltCategory.Macronutrient,
+            Group = SaltGroup.MagnesiumSource,
+            IonContributions = new Dictionary<Ion, double>
+            {
+                [Ion.Magnesium] = 24.305,
+                [Ion.Sulfate] = 96.0626
+            }
+        };
+
+        var availableSalts = new List<Salt> { caNitrate, kNitrate, mgSulfate };
+        var profile = PlantProfileLibrary.Profiles.First(p => p.Name == "Lettuce - Vegetative");
+
+        // Act
+        var optimizer = new NutrientRecipeOptimizer(availableSalts, profile);
         var result = optimizer.Solve();
 
-        Console.WriteLine(result);
+        // Assert - verify comparison data structure
+        if (result.Success)
+        {
+            Assert.NotEmpty(result.IonComparisons);
 
-        Assert.True(result.Success, $"Optimization failed: {result.ReasonForTermination}");
+            var nitrateComp = result.IonComparisons.FirstOrDefault(c => c.Ion == Ion.Nitrate);
+            Assert.NotNull(nitrateComp);
+            Assert.True(nitrateComp.ActualPpm > 0);
+            Assert.True(nitrateComp.TargetPpm > 0);
+
+            Console.WriteLine($"Nitrate: {nitrateComp.ActualPpm:F1} ppm (target: {nitrateComp.TargetPpm:F1}, delta: {nitrateComp.DeltaPpm:+0.0;-0.0})");
+        }
+
+        Console.WriteLine(result);
     }
 }

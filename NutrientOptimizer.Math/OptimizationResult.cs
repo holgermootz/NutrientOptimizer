@@ -5,6 +5,15 @@ using System.Text;
 
 namespace NutrientOptimizer.Math;
 
+public class IonComparison
+{
+    public Ion Ion { get; set; }
+    public double TargetPpm { get; set; }
+    public double ActualPpm { get; set; }
+    public double DeltaPpm { get; set; }
+    public bool InRange { get; set; }
+}
+
 public class OptimizationResult
 {
     public bool Success { get; set; }
@@ -13,6 +22,7 @@ public class OptimizationResult
     public string ReasonForTermination { get; set; } = string.Empty;
     public double FinalError { get; set; }
     public List<string> InfeasibilityReasons { get; set; } = new();
+    public List<IonComparison> IonComparisons { get; set; } = new();
 
     public Recipe ToRecipe()
     {
@@ -31,54 +41,46 @@ public class OptimizationResult
 
         if (!Success)
         {
-            sb.AppendLine($"=== OPTIMIZATION FAILED: {ReasonForTermination} ===");
+            sb.AppendLine($"=== OPTIMIZATION FAILED: {ReasonForTermination} ===\n");
 
             if (InfeasibilityReasons.Any())
             {
-                sb.AppendLine("\nWhy the optimization failed:");
                 foreach (var reason in InfeasibilityReasons)
-                    sb.AppendLine($"  • {reason}");
-            }
-            else
-            {
-                sb.AppendLine("\nNo specific ion conflicts detected (possibly numerical issues or unbounded model).");
+                    sb.AppendLine(reason);
             }
 
-            sb.AppendLine("\nAvailable salts were:");
-            foreach (var salt in SaltAmounts.Keys.Concat(UnusedSalts).OrderBy(s => s.Name))
+            if (SaltAmounts.Any() || UnusedSalts.Any())
             {
-                string status = SaltAmounts.ContainsKey(salt) && SaltAmounts[salt] > 1e-6 ? " (used)" : " (not used)";
-                sb.AppendLine($"  - {salt.Name} ({salt.Formula}){status}");
+                sb.AppendLine("\nAvailable salts:");
+                foreach (var salt in SaltAmounts.Keys.Concat(UnusedSalts).OrderBy(s => s.Name))
+                {
+                    string status = SaltAmounts.ContainsKey(salt) && SaltAmounts[salt] > 1e-6 ? "✓" : "✗";
+                    sb.AppendLine($"  [{status}] {salt.Name}");
+                }
             }
 
             return sb.ToString();
         }
 
-        // Success case
-        sb.AppendLine("=== OPTIMAL RECIPE FOUND ===");
+        sb.AppendLine("=== OPTIMIZATION SUCCESS ===\n");
+
         sb.AppendLine("Recipe (g/L):");
         if (SaltAmounts.Any())
         {
             foreach (var kv in SaltAmounts.OrderBy(k => k.Key.Name))
-                sb.AppendLine($"  {kv.Key.Name}: {kv.Value:F5} g/L");
+                sb.AppendLine($"  {kv.Key.Name}: {kv.Value:F4} g/L");
         }
         else
         {
-            sb.AppendLine("  No salts required (all targets met with zero input).");
+            sb.AppendLine("  (No salts required)");
         }
 
-        if (UnusedSalts.Any())
+        sb.AppendLine("\nIon Concentrations:");
+        foreach (var comp in IonComparisons.OrderBy(c => c.Ion.ToString()))
         {
-            sb.AppendLine("\nSalts not used:");
-            foreach (var salt in UnusedSalts.OrderBy(s => s.Name))
-                sb.AppendLine($"  - {salt.Name} ({salt.Formula})");
+            string status = comp.InRange ? "✓" : "✗";
+            sb.AppendLine($"  [{status}] {comp.Ion}: {comp.ActualPpm:F1} ppm (target: {comp.TargetPpm:F1}, delta: {comp.DeltaPpm:+0.0;-0.0})");
         }
-
-        var solution = NutrientCalculator.CalculateSolution(ToRecipe());
-        sb.AppendLine("\n=== RESULTING ION CONCENTRATIONS (ppm) ===");
-        sb.Append(solution);
-
-        sb.AppendLine($"\nTotal deviation from ideal targets: {FinalError:F4}");
 
         return sb.ToString();
     }

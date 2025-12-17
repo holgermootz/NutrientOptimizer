@@ -7,6 +7,9 @@ using System.Linq;
 
 namespace NutrientOptimizer.Math;
 
+/// <summary>
+/// Optimizes nutrient recipes by solving a linear program for required ions.
+/// </summary>
 public class NutrientRecipeOptimizer
 {
     private readonly IReadOnlyList<Salt> _availableSalts;
@@ -20,41 +23,93 @@ public class NutrientRecipeOptimizer
 
     public OptimizationResult Solve()
     {
-        var supplyAnalysis = AnalyzeIonSupply();
-
-        if (supplyAnalysis.SupplyableTargets.Count == 0)
+        // Step 1: Get ion demands (non-null targets)
+        var ionDemands = ExtractIonDemands(_plantProfile);
+        if (ionDemands.Count == 0)
         {
-            return new OptimizationResult
-            {
-                Success = false,
-                ReasonForTermination = "No controllable ions",
-                InfeasibilityReasons = { "No available salts provide any of the required ions." }
-            };
+            return FailResult("No ion targets with non-null demands in plant profile");
         }
 
+        // Step 2: Tag ions and analyze availability
+        var ionTagging = TagAvailableIons(ionDemands);
+        if (ionTagging.NeededIons.Count == 0)
+        {
+            return FailResult("No required ions can be supplied by available salts");
+        }
+
+        // Step 3: Solve for needed ions
+        var solverResult = SolveForIons(ionTagging);
+        if (!solverResult.Success)
+        {
+            return solverResult;
+        }
+
+        // Step 4: Calculate complete ion results
+        var ionResults = CalculateCompleteIonResults(solverResult.SaltAmounts);
+
+        // Step 5: Build comprehensive result
+        return BuildOptimizationResult(solverResult, ionResults, ionDemands, ionTagging);
+    }
+
+    /// <summary>
+    /// Step 1: Extract ALL ion targets (not just those with TargetPpm)
+    /// </summary>
+    private List<IonDemand> ExtractIonDemands(PlantProfile profile)
+    {
+        return profile.IonTargets
+            .Select(t => new IonDemand
+            {
+                Ion = t.Ion,
+                TargetPpm = t.TargetPpm ?? ((t.MinPpm + t.MaxPpm) / 2.0),
+                MinPpm = t.MinPpm,
+                MaxPpm = t.MaxPpm
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Step 2: Tag ions as needed/unnecessary and check availability
+    /// </summary>
+    private IonTagging TagAvailableIons(List<IonDemand> demands)
+    {
+        var tagging = new IonTagging();
+        var suppliedIons = _availableSalts
+            .SelectMany(s => s.IonContributions.Keys)
+            .ToHashSet();
+
+        foreach (var demand in demands)
+        {
+            if (suppliedIons.Contains(demand.Ion))
+                tagging.NeededIons.Add(demand);
+            else
+                tagging.UnsupplyableIons.Add(demand);
+        }
+
+        return tagging;
+    }
+
+    /// <summary>
+    /// Step 3: Solve linear program for needed ions
+    /// </summary>
+    private OptimizationResult SolveForIons(IonTagging ionTagging)
+    {
         Solver solver = Solver.CreateSolver("SCIP");
         if (solver is null)
-        {
-            return new OptimizationResult
-            {
-                Success = false,
-                ReasonForTermination = "SCIP solver not available."
-            };
-        }
+            return FailResult("SCIP solver not available");
 
         // Variables: grams per liter of each salt
         var variables = _availableSalts.ToDictionary(
             salt => salt,
             salt => solver.MakeNumVar(0.0, double.PositiveInfinity, salt.Name));
 
-        // Constraints: only for ions we can actually supply
-        foreach (var target in supplyAnalysis.SupplyableTargets)
+        // Constraints: bounds for needed ions
+        foreach (var demand in ionTagging.NeededIons)
         {
-            var constraint = solver.MakeConstraint(target.MinPpm, target.MaxPpm, $"Bound_{target.Ion}");
+            var constraint = solver.MakeConstraint(demand.MinPpm, demand.MaxPpm, $"Bound_{demand.Ion}");
 
             foreach (var salt in _availableSalts)
             {
-                if (salt.IonContributions.TryGetValue(target.Ion, out double massPerMole))
+                if (salt.IonContributions.TryGetValue(demand.Ion, out double massPerMole))
                 {
                     double coeff = massPerMole * 1000.0 / salt.MolecularWeight;
                     constraint.SetCoefficient(variables[salt], coeff);
@@ -62,57 +117,35 @@ public class NutrientRecipeOptimizer
             }
         }
 
-        // Objective: minimize total absolute deviation from targets
+        // Objective: minimize deviation from targets
         Objective objective = solver.Objective();
-        objective.SetMinimization(); // ← correct: no argument
+        objective.SetMinimization();
 
-        bool hasOptimizableTargets = false;
-
-        foreach (var target in supplyAnalysis.SupplyableTargets)
+        foreach (var demand in ionTagging.NeededIons)
         {
-            if (!target.TargetPpm.HasValue)
-                continue;
-
-            hasOptimizableTargets = true;
-
-            // Build linear expression for actual ppm of this ion
-            LinearExpr actualExpr = new LinearExpr(); // starts at 0
+            LinearExpr actualExpr = new LinearExpr();
 
             foreach (var salt in _availableSalts)
             {
-                if (salt.IonContributions.TryGetValue(target.Ion, out double massPerMole))
+                if (salt.IonContributions.TryGetValue(demand.Ion, out double massPerMole))
                 {
                     double coeff = massPerMole * 1000.0 / salt.MolecularWeight;
                     actualExpr += variables[salt] * coeff;
                 }
             }
 
-            // Slack variables for absolute deviation
-            var slackPos = solver.MakeNumVar(0.0, double.PositiveInfinity, $"dev_pos_{target.Ion}");
-            var slackNeg = solver.MakeNumVar(0.0, double.PositiveInfinity, $"dev_neg_{target.Ion}");
+            var slackPos = solver.MakeNumVar(0.0, double.PositiveInfinity, $"dev_pos_{demand.Ion}");
+            var slackNeg = solver.MakeNumVar(0.0, double.PositiveInfinity, $"dev_neg_{demand.Ion}");
 
-            // actual + pos - neg = target
-            solver.Add(actualExpr + slackPos - slackNeg == target.TargetPpm.Value);
+            solver.Add(actualExpr + slackPos - slackNeg == demand.TargetPpm);
 
-            // Minimize sum of slacks
             objective.SetCoefficient(slackPos, 1.0);
             objective.SetCoefficient(slackNeg, 1.0);
         }
 
-        // Fallback: minimize total salt usage if no targets
-        if (!hasOptimizableTargets)
-        {
-            foreach (var variable in variables.Values)
-            {
-                objective.SetCoefficient(variable, 0.0001);
-            }
-        }
+        var status = solver.Solve();
+        bool success = status == Solver.ResultStatus.OPTIMAL || status == Solver.ResultStatus.FEASIBLE;
 
-        // Solve
-        var resultStatus = solver.Solve();
-        bool success = resultStatus == Solver.ResultStatus.OPTIMAL || resultStatus == Solver.ResultStatus.FEASIBLE;
-
-        // Extract solution
         var amounts = new Dictionary<Salt, double>();
         if (success)
         {
@@ -128,142 +161,121 @@ public class NutrientRecipeOptimizer
         {
             Success = success,
             SaltAmounts = amounts,
-            UnusedSalts = _availableSalts.Where(s => !amounts.ContainsKey(s) || amounts[s] < 1e-6).ToList(),
-            ReasonForTermination = resultStatus.ToString(),
-            FinalError = success ? objective.Value() : double.NaN
+            ReasonForTermination = status.ToString()
         };
 
-        // Report ignored (unsupplyable) ions
-        if (supplyAnalysis.UnsupplyableTargets.Any())
+        if (!success)
         {
-            result.InfeasibilityReasons.Add("=== PARTIAL OPTIMIZATION ===");
-            result.InfeasibilityReasons.Add("These required ions cannot be supplied and were ignored:");
-            foreach (var t in supplyAnalysis.UnsupplyableTargets.Where(t => t.MinPpm > 0))
+            result.InfeasibilityReasons.Add($"Solver status: {status}");
+            foreach (var ion in ionTagging.UnsupplyableIons)
             {
-                result.InfeasibilityReasons.Add($"  • {t.Ion}: ≥ {t.MinPpm} ppm (no source available)");
-            }
-            result.InfeasibilityReasons.Add("");
-        }
-
-        // Only detect ratio conflicts if optimization failed or was not optimal
-        // If we have a successful solution, these "conflicts" are not real
-        if (!success || resultStatus != Solver.ResultStatus.OPTIMAL)
-        {
-            var conflictWarnings = DetectRatioConflicts(supplyAnalysis.SupplyableTargets, _availableSalts.ToList());
-            if (conflictWarnings.Any())
-            {
-                result.InfeasibilityReasons.Add("=== RATIO CONFLICTS DETECTED ===");
-                result.InfeasibilityReasons.AddRange(conflictWarnings);
+                result.InfeasibilityReasons.Add($"  ✗ {ion.Ion}: no source available");
             }
         }
 
         return result;
     }
 
-    private (List<IonTarget> SupplyableTargets, List<IonTarget> UnsupplyableTargets) AnalyzeIonSupply()
+    /// <summary>
+    /// Step 4: Calculate complete ion concentrations from salt amounts
+    /// </summary>
+    private IonResults CalculateCompleteIonResults(Dictionary<Salt, double> saltAmounts)
     {
-        var suppliedIons = _availableSalts
-            .SelectMany(s => s.IonContributions.Keys)
-            .ToHashSet();
+        var results = new IonResults();
 
-        var supplyable = new List<IonTarget>();
-        var unsupplyable = new List<IonTarget>();
-
-        foreach (var target in _plantProfile.IonTargets)
+        foreach (var salt in saltAmounts.Keys)
         {
-            if (suppliedIons.Contains(target.Ion))
-                supplyable.Add(target);
-            else
-                unsupplyable.Add(target);
+            double gramsPerLiter = saltAmounts[salt];
+
+            foreach (var (ion, massPerMole) in salt.IonContributions)
+            {
+                double coeff = massPerMole * 1000.0 / salt.MolecularWeight;
+                double ppm = gramsPerLiter * coeff;
+
+                if (!results.IonConcentrations.ContainsKey(ion))
+                    results.IonConcentrations[ion] = 0;
+
+                results.IonConcentrations[ion] += ppm;
+            }
         }
 
-        return (supplyable, unsupplyable);
+        return results;
     }
 
-    private List<string> DetectRatioConflicts(List<IonTarget> targets, List<Salt> salts)
+    /// <summary>
+    /// Step 5: Build comprehensive result with deltas and comparisons
+    /// </summary>
+    private OptimizationResult BuildOptimizationResult(
+        OptimizationResult solverResult,
+        IonResults ionResults,
+        List<IonDemand> demands,
+        IonTagging ionTagging)
     {
-        var warnings = new List<string>();
+        solverResult.UnusedSalts = _availableSalts
+            .Where(s => !solverResult.SaltAmounts.ContainsKey(s) || solverResult.SaltAmounts[s] < 1e-6)
+            .ToList();
 
-        foreach (var victimTarget in targets)
+        // Add comparison data
+        foreach (var demand in demands)
         {
-            var victimIon = victimTarget.Ion;
+            var actual = ionResults.IonConcentrations.GetValueOrDefault(demand.Ion, 0.0);
+            var delta = actual - demand.TargetPpm;
+            var inRange = actual >= demand.MinPpm - 1e-3 && actual <= demand.MaxPpm + 1e-3;
 
-            // Unavoidable minimum (when trying to maximize other ions / satisfy their mins)
-            double unavoidableMin = ComputeExtreme(victimIon, minimize: false, targets, salts);
-            if (unavoidableMin > victimTarget.MaxPpm + 1e-3)
+            solverResult.IonComparisons.Add(new IonComparison
             {
-                warnings.Add($"{victimIon} will always exceed {victimTarget.MaxPpm:F1} ppm " +
-                             $"(unavoidable ≥ {unavoidableMin:F1} ppm) when meeting other requirements.");
-            }
-
-            // Unavoidable maximum
-            double unavoidableMax = ComputeExtreme(victimIon, minimize: true, targets, salts);
-            if (unavoidableMax < victimTarget.MinPpm - 1e-3)
-            {
-                warnings.Add($"{victimIon} will always be below {victimTarget.MinPpm:F1} ppm " +
-                             $"(unavoidable ≤ {unavoidableMax:F1} ppm) when meeting other requirements.");
-            }
+                Ion = demand.Ion,
+                TargetPpm = demand.TargetPpm,
+                ActualPpm = actual,
+                DeltaPpm = delta,
+                InRange = inRange
+            });
         }
 
-        // Remove warnings if they don't actually prevent a solution
-        // (i.e., if the optimal solution respects the bounds)
-        return warnings;
+        // Add unsupplyable ions to result
+        foreach (var ion in ionTagging.UnsupplyableIons)
+        {
+            solverResult.InfeasibilityReasons.Add($"  ✗ {ion.Ion}: target {ion.TargetPpm} ppm (no source)");
+        }
+
+        return solverResult;
     }
 
-    private double ComputeExtreme(Ion targetIon, bool minimize, List<IonTarget> targets, List<Salt> salts)
+    private OptimizationResult FailResult(string reason)
     {
-        Solver solver = Solver.CreateSolver("SCIP");
-        if (solver is null) return minimize ? double.PositiveInfinity : 0;
-
-        var variables = salts.ToDictionary(s => s, s => solver.MakeNumVar(0.0, double.PositiveInfinity, s.Name));
-
-        // Enforce bounds for all ions EXCEPT the target one
-        foreach (var t in targets.Where(t => t.Ion != targetIon))
+        return new OptimizationResult
         {
-            var c = solver.MakeConstraint(t.MinPpm, t.MaxPpm);
-            foreach (var salt in salts)
-            {
-                if (salt.IonContributions.TryGetValue(t.Ion, out double m))
-                {
-                    double coeff = m * 1000.0 / salt.MolecularWeight;
-                    c.SetCoefficient(variables[salt], coeff);
-                }
-            }
-        }
-
-        // Build objective: minimize or maximize the target ion concentration
-        Objective obj = solver.Objective();
-        if (minimize)
-            obj.SetMinimization();
-        else
-            obj.SetMaximization();
-
-        // Add each contributing variable to the objective with proper coefficient
-        foreach (var salt in salts)
-        {
-            if (salt.IonContributions.TryGetValue(targetIon, out double m))
-            {
-                double coeff = m * 1000.0 / salt.MolecularWeight;
-                obj.SetCoefficient(variables[salt], coeff);
-            }
-        }
-
-        var status = solver.Solve();
-
-        if (status != Solver.ResultStatus.OPTIMAL && status != Solver.ResultStatus.FEASIBLE)
-            return minimize ? double.PositiveInfinity : 0;
-
-        // Compute the actual value of the target ion from the solution
-        double value = 0.0;
-        foreach (var salt in salts)
-        {
-            if (salt.IonContributions.TryGetValue(targetIon, out double m))
-            {
-                double coeff = m * 1000.0 / salt.MolecularWeight;
-                value += variables[salt].SolutionValue() * coeff;
-            }
-        }
-
-        return value;
+            Success = false,
+            ReasonForTermination = reason,
+            InfeasibilityReasons = { reason }
+        };
     }
+}
+
+/// <summary>
+/// Represents an ion demand from the plant profile
+/// </summary>
+public class IonDemand
+{
+    public Ion Ion { get; set; }
+    public double TargetPpm { get; set; }
+    public double MinPpm { get; set; }
+    public double MaxPpm { get; set; }
+}
+
+/// <summary>
+/// Tags ions as needed or unsupplyable
+/// </summary>
+public class IonTagging
+{
+    public List<IonDemand> NeededIons { get; } = new();
+    public List<IonDemand> UnsupplyableIons { get; } = new();
+}
+
+/// <summary>
+/// Calculated ion concentrations
+/// </summary>
+public class IonResults
+{
+    public Dictionary<Ion, double> IonConcentrations { get; } = new();
 }
