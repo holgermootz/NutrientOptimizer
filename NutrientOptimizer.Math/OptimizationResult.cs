@@ -12,6 +12,11 @@ public class IonComparison
     public double ActualPpm { get; set; }
     public double DeltaPpm { get; set; }
     public bool InRange { get; set; }
+
+    /// <summary>
+    /// Delta as percentage of target value
+    /// </summary>
+    public double DeltaPercent => TargetPpm != 0 ? (DeltaPpm / TargetPpm) * 100.0 : 0;
 }
 
 public class OptimizationResult
@@ -23,6 +28,7 @@ public class OptimizationResult
     public double FinalError { get; set; }
     public List<string> InfeasibilityReasons { get; set; } = new();
     public List<IonComparison> IonComparisons { get; set; } = new();
+    public bool IsApproximateSolution { get; set; }  // Flag for relaxed/best-effort solutions
 
     public Recipe ToRecipe()
     {
@@ -42,7 +48,7 @@ public class OptimizationResult
         if (!Success)
         {
             sb.AppendLine($"=== OPTIMIZATION FAILED: {ReasonForTermination} ===\n");
-
+            
             if (InfeasibilityReasons.Any())
             {
                 foreach (var reason in InfeasibilityReasons)
@@ -62,7 +68,16 @@ public class OptimizationResult
             return sb.ToString();
         }
 
-        sb.AppendLine("=== OPTIMIZATION SUCCESS ===\n");
+        // Success case
+        if (IsApproximateSolution)
+        {
+            sb.AppendLine("=== APPROXIMATE SOLUTION (BEST EFFORT) ===\n");
+            sb.AppendLine("⚠️  This solution relaxes some constraints to find the closest possible match.\n");
+        }
+        else
+        {
+            sb.AppendLine("=== OPTIMIZATION SUCCESS ===\n");
+        }
 
         sb.AppendLine("Recipe (g/L):");
         if (SaltAmounts.Any())
@@ -78,8 +93,15 @@ public class OptimizationResult
         sb.AppendLine("\nIon Concentrations:");
         foreach (var comp in IonComparisons.OrderBy(c => c.Ion.ToString()))
         {
-            string status = comp.InRange ? "✓" : "✗";
-            sb.AppendLine($"  [{status}] {comp.Ion}: {comp.ActualPpm:F1} ppm (target: {comp.TargetPpm:F1}, delta: {comp.DeltaPpm:+0.0;-0.0})");
+            string status = comp.InRange ? "✓" : "⚠";
+            sb.AppendLine($"  [{status}] {comp.Ion}: {comp.ActualPpm:F1} ppm (target: {comp.TargetPpm:F1}, delta: {comp.DeltaPercent:+0.0;-0.0}%)");
+        }
+
+        if (InfeasibilityReasons.Any())
+        {
+            sb.AppendLine("\nNotes:");
+            foreach (var reason in InfeasibilityReasons)
+                sb.AppendLine($"  {reason}");
         }
 
         return sb.ToString();

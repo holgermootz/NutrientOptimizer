@@ -102,19 +102,24 @@ public class NutrientRecipeOptimizer
             salt => salt,
             salt => solver.MakeNumVar(0.0, double.PositiveInfinity, salt.Name));
 
-        // Constraints: bounds for needed ions
+        // Constraints: bounds for needed ions (tight first attempt)
+        var ionExpressions = new Dictionary<Ion, LinearExpr>();
+        
         foreach (var demand in ionTagging.NeededIons)
         {
-            var constraint = solver.MakeConstraint(demand.MinPpm, demand.MaxPpm, $"Bound_{demand.Ion}");
-
+            LinearExpr actualExpr = new LinearExpr();
             foreach (var salt in _availableSalts)
             {
                 if (salt.IonContributions.TryGetValue(demand.Ion, out double massPerMole))
                 {
                     double coeff = massPerMole * 1000.0 / salt.MolecularWeight;
-                    constraint.SetCoefficient(variables[salt], coeff);
+                    actualExpr += variables[salt] * coeff;
                 }
             }
+            ionExpressions[demand.Ion] = actualExpr;
+
+            // Add tight constraint
+            solver.MakeConstraint(demand.MinPpm, demand.MaxPpm, $"Bound_{demand.Ion}");
         }
 
         // Objective: minimize deviation from targets
@@ -123,8 +128,64 @@ public class NutrientRecipeOptimizer
 
         foreach (var demand in ionTagging.NeededIons)
         {
-            LinearExpr actualExpr = new LinearExpr();
+            var slackPos = solver.MakeNumVar(0.0, double.PositiveInfinity, $"dev_pos_{demand.Ion}");
+            var slackNeg = solver.MakeNumVar(0.0, double.PositiveInfinity, $"dev_neg_{demand.Ion}");
 
+            solver.Add(ionExpressions[demand.Ion] + slackPos - slackNeg == demand.TargetPpm);
+
+            objective.SetCoefficient(slackPos, 1.0);
+            objective.SetCoefficient(slackNeg, 1.0);
+        }
+
+        var status = solver.Solve();
+        bool success = status == Solver.ResultStatus.OPTIMAL || status == Solver.ResultStatus.FEASIBLE;
+
+        // If tight constraints failed, try relaxed constraints
+        if (!success)
+        {
+            return TrySolveWithRelaxedConstraints(ionTagging);
+        }
+
+        var amounts = new Dictionary<Salt, double>();
+        foreach (var kv in variables)
+        {
+            double value = kv.Value.SolutionValue();
+            if (value > 1e-6)
+                amounts[kv.Key] = value;
+        }
+
+        var result = new OptimizationResult
+        {
+            Success = success,
+            SaltAmounts = amounts,
+            ReasonForTermination = status.ToString()
+        };
+
+        return result;
+    }
+
+    /// <summary>
+    /// When tight constraints fail, try relaxed constraints to find closest solution
+    /// </summary>
+    private OptimizationResult TrySolveWithRelaxedConstraints(IonTagging ionTagging)
+    {
+        Solver solver = Solver.CreateSolver("SCIP");
+        if (solver is null)
+            return FailResult("SCIP solver not available");
+
+        var variables = _availableSalts.ToDictionary(
+            salt => salt,
+            salt => solver.MakeNumVar(0.0, double.PositiveInfinity, salt.Name));
+
+        // Relaxed constraints: allow violations but penalize them
+        Objective objective = solver.Objective();
+        objective.SetMinimization();
+
+        const double relaxationFactor = 0.2;  // Allow 20% relaxation of bounds
+
+        foreach (var demand in ionTagging.NeededIons)
+        {
+            LinearExpr actualExpr = new LinearExpr();
             foreach (var salt in _availableSalts)
             {
                 if (salt.IonContributions.TryGetValue(demand.Ion, out double massPerMole))
@@ -134,17 +195,35 @@ public class NutrientRecipeOptimizer
                 }
             }
 
-            var slackPos = solver.MakeNumVar(0.0, double.PositiveInfinity, $"dev_pos_{demand.Ion}");
-            var slackNeg = solver.MakeNumVar(0.0, double.PositiveInfinity, $"dev_neg_{demand.Ion}");
+            // Relaxed bounds: expand range by 20%
+            double range = demand.MaxPpm - demand.MinPpm;
+            double relaxedMin = demand.MinPpm - (range * relaxationFactor);
+            double relaxedMax = demand.MaxPpm + (range * relaxationFactor);
 
-            solver.Add(actualExpr + slackPos - slackNeg == demand.TargetPpm);
+            var constraint = solver.MakeConstraint(relaxedMin, relaxedMax, $"Relaxed_{demand.Ion}");
+            foreach (var salt in _availableSalts)
+            {
+                if (salt.IonContributions.TryGetValue(demand.Ion, out double massPerMole))
+                {
+                    double coeff = massPerMole * 1000.0 / salt.MolecularWeight;
+                    constraint.SetCoefficient(variables[salt], coeff);
+                }
+            }
 
-            objective.SetCoefficient(slackPos, 1.0);
-            objective.SetCoefficient(slackNeg, 1.0);
+            // Penalize deviations from target (higher weight than tight case)
+            var deviationPos = solver.MakeNumVar(0.0, double.PositiveInfinity, $"relax_pos_{demand.Ion}");
+            var deviationNeg = solver.MakeNumVar(0.0, double.PositiveInfinity, $"relax_neg_{demand.Ion}");
+
+            solver.Add(actualExpr + deviationPos - deviationNeg == demand.TargetPpm);
+
+            // High penalty for any deviation to stay close to target
+            objective.SetCoefficient(deviationPos, 10.0);
+            objective.SetCoefficient(deviationNeg, 10.0);
         }
 
         var status = solver.Solve();
-        bool success = status == Solver.ResultStatus.OPTIMAL || status == Solver.ResultStatus.FEASIBLE;
+        bool success = status == Solver.ResultStatus.OPTIMAL || 
+                      status == Solver.ResultStatus.FEASIBLE;
 
         var amounts = new Dictionary<Salt, double>();
         if (success)
@@ -161,19 +240,210 @@ public class NutrientRecipeOptimizer
         {
             Success = success,
             SaltAmounts = amounts,
-            ReasonForTermination = status.ToString()
+            ReasonForTermination = $"RELAXED_CONSTRAINTS ({status})",
+            IsApproximateSolution = true  // Flag that this is best-effort
         };
 
         if (!success)
         {
-            result.InfeasibilityReasons.Add($"Solver status: {status}");
-            foreach (var ion in ionTagging.UnsupplyableIons)
-            {
-                result.InfeasibilityReasons.Add($"  ✗ {ion.Ion}: no source available");
-            }
+            result.InfeasibilityReasons.Add($"Could not find solution even with relaxed constraints: {status}");
+            result.InfeasibilityReasons.AddRange(DiagnoseInfeasibility(ionTagging));
+        }
+        else
+        {
+            result.InfeasibilityReasons.Add("⚠️ APPROXIMATE SOLUTION (20% constraint relaxation)");
+            result.InfeasibilityReasons.Add("The solver relaxed some bounds to find the closest possible solution.");
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Diagnose why the optimization failed by analyzing ion ratios and availability
+    /// </summary>
+    private List<string> DiagnoseInfeasibility(IonTagging ionTagging)
+    {
+        var reasons = new List<string>();
+
+        // 1. Report unsupplyable ions
+        if (ionTagging.UnsupplyableIons.Any())
+        {
+            reasons.Add("=== MISSING ION SOURCES ===");
+            foreach (var ion in ionTagging.UnsupplyableIons)
+            {
+                reasons.Add($"  ✗ {ion.Ion}: target {ion.TargetPpm:F1} ppm (no salt provides this)");
+            }
+            reasons.Add("");
+        }
+
+        // 2. Detect ratio conflicts for supplyable ions
+        var conflicts = DetectRatioConflicts(ionTagging.NeededIons);
+        if (conflicts.Any())
+        {
+            reasons.Add("=== RATIO CONFLICTS ===");
+            reasons.AddRange(conflicts);
+            reasons.Add("");
+        }
+
+        // 3. Analyze salt composition
+        reasons.Add("=== AVAILABLE SALTS COMPOSITION ===");
+        foreach (var salt in _availableSalts)
+        {
+            var ions = string.Join(", ", salt.IonContributions
+                .OrderByDescending(x => x.Value)
+                .Take(3)
+                .Select(x => $"{x.Key}"));
+            reasons.Add($"  • {salt.Name}: {ions}");
+        }
+        reasons.Add("");
+
+        // 4. Provide concrete salt recommendations
+        reasons.Add("=== CONCRETE RECOMMENDATIONS ===");
+        var engine = new SaltRecommendationEngine(_availableSalts, _availableSalts, ionTagging.NeededIons);
+        var recs = engine.GetRecommendations();
+        
+        if (recs.Any())
+        {
+            foreach (var rec in recs)
+            {
+                reasons.Add($"  {rec.Reason}");
+                foreach (var saltOpt in rec.RecommendedSalts)
+                {
+                    reasons.Add($"    ✓ {saltOpt.GetDescription()}");
+                }
+            }
+        }
+        else
+        {
+            reasons.Add("  → Try adjusting plant profile demands (lower nutrient levels)");
+            reasons.Add("  → Or use a different combination of available salts");
+        }
+
+        return reasons;
+    }
+
+    /// <summary>
+    /// Detect ratio conflicts by testing if ions can be satisfied independently
+    /// </summary>
+    private List<string> DetectRatioConflicts(List<IonDemand> neededIons)
+    {
+        var conflicts = new List<string>();
+
+        // For each ion, check if meeting min/max for others forces it out of range
+        foreach (var targetIon in neededIons)
+        {
+            var otherIons = neededIons.Where(x => x.Ion != targetIon.Ion).ToList();
+
+            // Test minimum of target ion (maximize others within their ranges)
+            var minResult = TestExtreme(targetIon, otherIons, minimize: true);
+            if (minResult.Feasible && minResult.Value < targetIon.MinPpm - 1e-3)
+            {
+                conflicts.Add($"  ✗ {targetIon.Ion}: cannot achieve minimum {targetIon.MinPpm:F1} ppm");
+                conflicts.Add($"    → Unavoidable minimum: {minResult.Value:F1} ppm (while meeting other ions)");
+            }
+
+            // Test maximum of target ion (minimize others within their ranges)
+            var maxResult = TestExtreme(targetIon, otherIons, minimize: false);
+            if (maxResult.Feasible && maxResult.Value > targetIon.MaxPpm + 1e-3)
+            {
+                conflicts.Add($"  ✗ {targetIon.Ion}: cannot achieve maximum {targetIon.MaxPpm:F1} ppm");
+                conflicts.Add($"    → Unavoidable maximum: {maxResult.Value:F1} ppm (while meeting other ions)");
+            }
+        }
+
+        return conflicts;
+    }
+
+    /// <summary>
+    /// Test if an ion can be minimized or maximized while satisfying other ions
+    /// </summary>
+    private (bool Feasible, double Value) TestExtreme(IonDemand targetIon, List<IonDemand> otherIons, bool minimize)
+    {
+        try
+        {
+            Solver testSolver = Solver.CreateSolver("SCIP");
+            if (testSolver is null)
+                return (false, 0);
+
+            var testVars = _availableSalts.ToDictionary(
+                s => s,
+                s => testSolver.MakeNumVar(0.0, double.PositiveInfinity, s.Name));
+
+            // Constrain other ions
+            foreach (var other in otherIons)
+            {
+                var c = testSolver.MakeConstraint(other.MinPpm, other.MaxPpm);
+                foreach (var salt in _availableSalts)
+                {
+                    if (salt.IonContributions.TryGetValue(other.Ion, out var mass))
+                    {
+                        double coeff = mass * 1000.0 / salt.MolecularWeight;
+                        c.SetCoefficient(testVars[salt], coeff);
+                    }
+                }
+            }
+
+            // Objective: minimize or maximize target ion
+            var obj = testSolver.Objective();
+            if (minimize)
+                obj.SetMinimization();
+            else
+                obj.SetMaximization();
+
+            foreach (var salt in _availableSalts)
+            {
+                if (salt.IonContributions.TryGetValue(targetIon.Ion, out var mass))
+                {
+                    double coeff = mass * 1000.0 / salt.MolecularWeight;
+                    obj.SetCoefficient(testVars[salt], coeff);
+                }
+            }
+
+            var status = testSolver.Solve();
+            if (status != Solver.ResultStatus.OPTIMAL && status != Solver.ResultStatus.FEASIBLE)
+                return (false, 0);
+
+            double value = 0;
+            foreach (var salt in _availableSalts)
+            {
+                if (salt.IonContributions.TryGetValue(targetIon.Ion, out var mass))
+                {
+                    double coeff = mass * 1000.0 / salt.MolecularWeight;
+                    value += testVars[salt].SolutionValue() * coeff;
+                }
+            }
+
+            return (true, value);
+        }
+        catch
+        {
+            return (false, 0);
+        }
+    }
+
+    /// <summary>
+    /// Suggest which ions should be added to enable a feasible solution
+    /// </summary>
+    private List<string> SuggestMissingIons(IonTagging ionTagging)
+    {
+        var suggestions = new List<string>();
+        var suppliedIons = _availableSalts
+            .SelectMany(s => s.IonContributions.Keys)
+            .ToHashSet();
+
+        // Check for completely missing ions
+        foreach (var unsupply in ionTagging.UnsupplyableIons.Take(3))
+        {
+            suggestions.Add($"{unsupply.Ion} (currently no source)");
+        }
+
+        // If all ions are supplied but it's still infeasible, suggest diversification
+        if (!suggestions.Any() && _availableSalts.Count < 4)
+        {
+            suggestions.Add("More salt options for ratio flexibility");
+        }
+
+        return suggestions;
     }
 
     /// <summary>
