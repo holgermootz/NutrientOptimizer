@@ -1,0 +1,95 @@
+@using NutrientOptimizer.Core
+@using NutrientOptimizer.Core.Data
+@using NutrientOptimizer.Web.Services
+@using MudBlazor
+@using NutrientOptimizer.Web.Components.Controls
+
+@inject SaltDatabaseService SaltService
+@inject SelectedSubstancesService SelectionService
+@implements IDisposable
+
+<MudStack Spacing="3">
+    <!-- Search and Filter -->
+    <MudStack Row="true" Spacing="2">
+        <MudTextField @bind-Value="SearchTerm" Placeholder="Search substances..." 
+            Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+            Style="flex: 1;" />
+        
+        <MudSelect @bind-Value="SelectedGroup" Label="Filter by Group" Variant="Variant.Filled" Style="min-width: 200px;">
+            <MudSelectItem Value="@(null as SaltGroup?)">All Groups</MudSelectItem>
+            @foreach (var group in Enum.GetValues(typeof(SaltGroup)).Cast<SaltGroup>())
+            {
+                <MudSelectItem Value="@((SaltGroup?)group)">@group</MudSelectItem>
+            }
+        </MudSelect>
+    </MudStack>
+
+    <!-- Tabs for Commercial vs Raw -->
+    <MudTabs Elevation="0" ActivePanelIndex="@_activeTabIndex" ApplyEffectsToContainer="true">
+        <MudTabPanel Text="?? Commercial Fertilizers">
+            <SaltTypeTab Salts="@FilteredSaltsByType(SubstanceType.Commercial)"
+                         TypeName="commercial fertilizers"
+                         OnDetailsClick="@ShowSaltDetails" />
+        </MudTabPanel>
+
+        <MudTabPanel Text="?? Raw Chemical Salts">
+            <SaltTypeTab Salts="@FilteredSaltsByType(SubstanceType.Raw)"
+                         TypeName="raw salts"
+                         OnDetailsClick="@ShowSaltDetails" />
+        </MudTabPanel>
+    </MudTabs>
+</MudStack>
+
+@code {
+    private List<Salt>? AllSalts;
+    private string SearchTerm = string.Empty;
+    private SaltGroup? SelectedGroup;
+    private int _activeTabIndex = 0;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            AllSalts = SaltService.GetAllSalts();
+            Console.WriteLine($"DEBUG: Loaded {AllSalts?.Count ?? 0} salts");
+            SelectionService.OnSelectionChanged += StateHasChanged;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading salts: {ex.Message}");
+        }
+    }
+
+    private void ShowSaltDetails(Salt salt)
+    {
+        Console.WriteLine($"Show details for {salt.Name}");
+    }
+
+    private List<Salt> FilteredSaltsByType(SubstanceType type)
+    {
+        if (AllSalts == null)
+        {
+            Console.WriteLine($"DEBUG: AllSalts is null!");
+            return new();
+        }
+
+        var filtered = AllSalts
+            .Where(s =>
+                s.Type == type &&
+                (string.IsNullOrEmpty(SearchTerm) || 
+                 s.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                 s.Formula.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)) &&
+                (!SelectedGroup.HasValue || s.Group == SelectedGroup))
+            .OrderBy(s => s.Name)
+            .ToList();
+        
+        Console.WriteLine($"DEBUG: FilteredSaltsByType({type}) = {filtered.Count} salts");
+        return filtered;
+    }
+
+    void IDisposable.Dispose()
+    {
+        SelectionService.OnSelectionChanged -= StateHasChanged;
+    }
+}

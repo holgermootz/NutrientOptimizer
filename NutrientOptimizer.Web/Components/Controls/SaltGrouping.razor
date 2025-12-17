@@ -1,0 +1,44 @@
+@using NutrientOptimizer.Core
+@using NutrientOptimizer.Core.Data
+@using NutrientOptimizer.Web.Services
+@using MudBlazor
+@using NutrientOptimizer.Web.Components.Controls
+
+@inject SelectedSubstancesService SelectionService
+
+<MudExpansionPanel Text="@Title" Dense="false">
+    <ChildContent>
+        <MudStack Spacing="2">
+            @foreach (var salt in Salts.OrderBy(x => x.Name))
+            {
+                var isSelected = SelectionService.IsSelected(salt);
+                <SaltItem Salt="@salt" 
+                          IsSelected="@isSelected"
+                          OnSelectionChanged="@((bool value) => OnSaltToggled(salt))"
+                          OnDetailsClick="@OnSaltDetailsClick" />
+            }
+        </MudStack>
+    </ChildContent>
+</MudExpansionPanel>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public List<Salt> Salts { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<Salt> OnDetailsClick { get; set; }
+
+    private void OnSaltToggled(Salt salt)
+    {
+        SelectionService.ToggleSalt(salt);
+        StateHasChanged();
+    }
+
+    private async Task OnSaltDetailsClick(Salt salt)
+    {
+        await OnDetailsClick.InvokeAsync(salt);
+    }
+}

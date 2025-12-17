@@ -1,0 +1,37 @@
+@using NutrientOptimizer.Core
+@using MudBlazor
+
+<MudPaper Class="pa-3" Elevation="@(IsSelected ? 2 : 0)" Style="@BackgroundStyle">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" @onclick="@(() => OnDetailsClick.InvokeAsync(Salt))" Style="cursor: pointer;">
+        <MudCheckBox T="bool" Value="@IsSelected" ValueChanged="@OnSelectionChanged" />
+        <MudStack Spacing="0" Style="flex: 1;">
+            <MudText Typo="Typo.body2" Style="font-weight: 500;">@Salt.Name</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Salt.Formula</MudText>
+            <MudText Typo="Typo.caption" Style="color: #7a8a7d; font-size: 0.75rem;">
+                ? @Salt.GetIonSummary()
+            </MudText>
+        </MudStack>
+        @if (IsSelected)
+        {
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public Salt Salt { get; set; } = null!;
+
+    [Parameter]
+    public bool IsSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnSelectionChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<Salt> OnDetailsClick { get; set; }
+
+    private string BackgroundStyle => IsSelected 
+        ? "background-color: #e8f5e9; border: 2px solid #4caf50; cursor: pointer;" 
+        : "border: 1px solid #e0e0e0; cursor: pointer;";
+}

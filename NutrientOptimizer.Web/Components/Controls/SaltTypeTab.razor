@@ -1,0 +1,37 @@
+@using NutrientOptimizer.Core
+@using NutrientOptimizer.Core.Data
+@using MudBlazor
+@using NutrientOptimizer.Web.Components.Controls
+
+<div style="padding-top: 20px;">
+    @if (Salts.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">
+            No @TypeName match your filters.
+        </MudAlert>
+    }
+    else
+    {
+        <MudText Typo="Typo.caption" Style="margin-bottom: 10px;">
+            Showing @Salts.Count substances
+        </MudText>
+        
+        @foreach (var grouping in Salts.GroupBy(s => s.Group).OrderBy(g => g.Key.ToString()))
+        {
+            <SaltGrouping Title="@grouping.Key.ToString()" 
+                          Salts="@grouping.ToList()"
+                          OnDetailsClick="@OnDetailsClick" />
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<Salt> Salts { get; set; } = new();
+
+    [Parameter]
+    public string TypeName { get; set; } = "substances";
+
+    [Parameter]
+    public EventCallback<Salt> OnDetailsClick { get; set; }
+}
