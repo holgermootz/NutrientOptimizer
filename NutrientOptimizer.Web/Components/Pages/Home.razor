@@ -9,6 +9,7 @@
 @using MudBlazor
 @inject SaltDatabaseService SaltService
 @inject SelectedSubstancesService SelectionService
+@inject WaterParametersService WaterParamsService
 @implements IAsyncDisposable
     
 <PageTitle>Nutrient Optimizer</PageTitle>
@@ -29,6 +30,9 @@ else if (AllSalts.Count == 0)
 else
 {
     <MudStack Spacing="3" Class="pa-4">
+        <!-- Local Water Parameters -->
+        <WaterParametersEditor Parameters="@WaterParameters" OnParametersChanged="@OnWaterParametersChanged" />
+
         <!-- Plant Profile Selection - Always Visible -->
         <MudPaper Elevation="0" Class="pa-6">
             <MudStack Spacing="3">
@@ -92,6 +96,7 @@ else
                     <MudStack Spacing="2">
                         @{
                             var saltsByGroup = SelectedSaltsList.GroupBy(s => s.Group).OrderBy(g => g.Key.ToString());
+                            var usedSalts = result?.SaltAmounts.Keys.ToHashSet() ?? new HashSet<Salt>();
                         }
 
                         @foreach (var grouping in saltsByGroup)
@@ -103,11 +108,16 @@ else
                                         @foreach (var salt in grouping.OrderBy(s => s.Name))
                                         {
                                             var currentSalt = salt;
+                                            var isUsed = usedSalts.Contains(salt);
+                                            var chipColor = isUsed ? Color.Success : Color.Inherit;
+                                            var chipStyle = isUsed ? "" : "opacity: 0.5;";
+                                            
                                             <MudChip T="string" 
                                                      OnClose="@(new EventCallback(this, new Func<Task>(() => { RemoveSalt(currentSalt); return Task.CompletedTask; })))"
-                                                     Color="Color.Success" 
+                                                     Color="@chipColor" 
                                                      Variant="Variant.Outlined"
-                                                     Size="Size.Small">
+                                                     Size="Size.Small"
+                                                     Style="@chipStyle">
                                                 @salt.Name
                                             </MudChip>
                                         }
@@ -172,7 +182,7 @@ else
                             <!-- Recipe Display -->
                             <MudPaper Elevation="0" Class="pa-4" Style="background-color: #f0f7f0; border-left: 4px solid #4caf50;">
                                 <MudStack Spacing="2">
-                                    <MudText Typo="Typo.subtitle2" Style="color: #2e7d32; font-weight: 500;">✓ Recipe (g/L)</MudText>
+                                    <MudText Typo="Typo.subtitle2" Style="color: #2e7d32; font-weight: 500;">✓ Recipe (g/L) - @(AvailableProfiles?[selectedProfileIndex]?.Name ?? "Unknown")</MudText>
                                     @if (result.SaltAmounts.Any())
                                     {
                                         <MudStack Spacing="1">
@@ -189,6 +199,35 @@ else
                                     {
                                         <MudText Typo="Typo.body2" Color="Color.Secondary">(No salts required)</MudText>
                                     }
+                                </MudStack>
+                            </MudPaper>
+
+                            <!-- Requirements Summary -->
+                            <MudPaper Elevation="0" Class="pa-4" Style="background-color: #fafafa; border: 1px solid #e0e0e0;">
+                                <MudStack Spacing="2">
+                                    <MudText Typo="Typo.subtitle2" Style="font-weight: 500;">📋 Ion Requirements vs Results</MudText>
+                                    <MudStack Spacing="1">
+                                        @foreach (var comparison in result.IonComparisons.OrderBy(c => c.Ion.ToString()))
+                                        {
+                                            var deviationPercent = comparison.DeltaPercent;
+                                            var isGood = Math.Abs(deviationPercent) <= 10;
+                                            var deviationColor = isGood ? Color.Success : Color.Warning;
+                                            var deviationSign = deviationPercent >= 0 ? "+" : "";
+
+                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                <MudText Typo="Typo.body2" Style="min-width: 150px; font-weight: 500;">@comparison.Ion.ToString()</MudText>
+                                                <MudText Typo="Typo.caption" Style="min-width: 120px;">Target: @comparison.TargetPpm.ToString("F1") ppm</MudText>
+                                                <MudText Typo="Typo.caption" Style="min-width: 120px;">Result: @comparison.ActualPpm.ToString("F1") ppm</MudText>
+                                                <MudChip T="string" 
+                                                         Color="@deviationColor" 
+                                                         Variant="Variant.Filled"
+                                                         Size="Size.Small"
+                                                         Style="min-width: 80px; text-align: center;">
+                                                    @(deviationSign)@deviationPercent.ToString("F1")%
+                                                </MudChip>
+                                            </MudStack>
+                                        }
+                                    </MudStack>
                                 </MudStack>
                             </MudPaper>
 
@@ -233,6 +272,7 @@ else
 @code {
     private List<PlantProfile>? AvailableProfiles;
     private List<Salt>? AllSalts;
+    private WaterParameters WaterParameters = WaterParameters.CreateDefault();
     private List<Salt> SelectedSaltsList => SelectionService.GetSelectedSalts();
 
     private int selectedProfileIndex = -1;
@@ -246,7 +286,9 @@ else
         {
             AvailableProfiles = PlantProfileLibrary.Profiles.ToList();
             AllSalts = SaltService.GetAllSalts();
+            WaterParameters = WaterParamsService.GetParameters();
             SelectionService.OnSelectionChanged += OnSaltSelectionChanged;
+            WaterParamsService.OnParametersChanged += OnWaterParametersChanged;
         }
         catch (Exception ex)
         {
@@ -261,8 +303,17 @@ else
 
     private void OnSaltSelectionChanged()
     {
-        // Only trigger recalculation without full StateHasChanged
         // Auto-recalculate if we have both profile and salts selected
+        if (selectedProfileIndex >= 0 && SelectedSaltsList.Count > 0 && !isCalculating)
+        {
+            _ = Calculate();
+        }
+    }
+
+    private void OnWaterParametersChanged()
+    {
+        WaterParameters = WaterParamsService.GetParameters();
+        // Auto-recalculate with new water parameters
         if (selectedProfileIndex >= 0 && SelectedSaltsList.Count > 0 && !isCalculating)
         {
             _ = Calculate();
@@ -306,7 +357,23 @@ else
             try
             {
                 var profile = AvailableProfiles[selectedProfileIndex];
-                var optimizer = new NutrientRecipeOptimizer(SelectedSaltsList, profile);
+                
+                // Adjust profile demands by subtracting water parameters
+                var adjustedProfile = new PlantProfile
+                {
+                    Name = profile.Name,
+                    Description = profile.Description,
+                    MinEC = profile.MinEC,
+                    MaxEC = profile.MaxEC,
+                    IonTargets = profile.IonTargets.Select(target => new IonTarget(
+                        target.Ion,
+                        Math.Max(0, target.MinPpm - GetWaterIonContent(target.Ion)),
+                        Math.Max(0, target.MaxPpm - GetWaterIonContent(target.Ion)),
+                        target.TargetPpm.HasValue ? Math.Max(0, target.TargetPpm.Value - GetWaterIonContent(target.Ion)) : null
+                    )).ToList()
+                };
+
+                var optimizer = new NutrientRecipeOptimizer(SelectedSaltsList, adjustedProfile);
                 result = optimizer.Solve();
             }
             catch (Exception ex)
@@ -323,8 +390,22 @@ else
         StateHasChanged();
     }
 
+    private double GetWaterIonContent(Ion ion)
+    {
+        return ion switch
+        {
+            Ion.Nitrate => WaterParameters.Nitrate,
+            Ion.Calcium => WaterParameters.Calcium,
+            Ion.Magnesium => WaterParameters.Magnesium,
+            Ion.Potassium => WaterParameters.Potassium,
+            Ion.Sulfate => WaterParameters.Sulfur,
+            _ => 0
+        };
+    }
+
     async ValueTask IAsyncDisposable.DisposeAsync()
     {
         SelectionService.OnSelectionChanged -= OnSaltSelectionChanged;
+        WaterParamsService.OnParametersChanged -= OnWaterParametersChanged;
     }
 }

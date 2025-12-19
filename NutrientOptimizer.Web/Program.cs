@@ -20,6 +20,7 @@ builder.Services.AddDbContext<NutrientDbContext>(options =>
 builder.Services.AddScoped<DatabaseInitializationService>();
 builder.Services.AddScoped<SaltDatabaseService>();
 builder.Services.AddScoped<SelectedSubstancesService>();
+builder.Services.AddScoped<WaterParametersService>();
 
 var app = builder.Build();
 

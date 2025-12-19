@@ -1,0 +1,168 @@
+@using NutrientOptimizer.Core
+@using NutrientOptimizer.Core.Models
+@using MudBlazor
+
+<MudPaper Elevation="0" Class="pa-6" Style="background-color: #f5f9ff; border: 1px solid #90caf9;">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h6" Style="font-weight: 400; letter-spacing: 0.5px;">?? LOCAL WATER PARAMETERS</MudText>
+            <MudSpacer />
+            @if (IsEditing)
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Success" Size="Size.Small" OnClick="SaveChanges">
+                    SAVE
+                </MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="CancelChanges">
+                    CANCEL
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="StartEdit">
+                    EDIT
+                </MudButton>
+            }
+        </MudStack>
+
+        @if (IsEditing)
+        {
+            <!-- Edit Mode -->
+            <MudStack Spacing="2">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudNumericField @bind-Value="EditingParams.Nitrate" 
+                                        Label="Nitrate (NO??) [ppm]" 
+                                        Min="0" 
+                                        Step="0.1"
+                                        Variant="Variant.Outlined"
+                                        HelperText="mg/L" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudNumericField @bind-Value="EditingParams.Calcium" 
+                                        Label="Calcium (Ca²?) [ppm]" 
+                                        Min="0" 
+                                        Step="0.1"
+                                        Variant="Variant.Outlined"
+                                        HelperText="mg/L" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudNumericField @bind-Value="EditingParams.Magnesium" 
+                                        Label="Magnesium (Mg²?) [ppm]" 
+                                        Min="0" 
+                                        Step="0.1"
+                                        Variant="Variant.Outlined"
+                                        HelperText="mg/L" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudNumericField @bind-Value="EditingParams.Potassium" 
+                                        Label="Potassium (K?) [ppm]" 
+                                        Min="0" 
+                                        Step="0.1"
+                                        Variant="Variant.Outlined"
+                                        HelperText="mg/L" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudNumericField @bind-Value="EditingParams.Sulfur" 
+                                        Label="Sulfur (SO?²?) [ppm]" 
+                                        Min="0" 
+                                        Step="0.1"
+                                        Variant="Variant.Outlined"
+                                        HelperText="mg/L" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudText Typo="Typo.body2" Style="font-weight: 500; margin-top: 24px;">
+                            Total: @EditingParams.GetTotalDissolved().ToString("F1") ppm
+                        </MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudStack>
+        }
+        else
+        {
+            <!-- Display Mode -->
+            <MudStack Spacing="2">
+                <MudGrid Spacing="1">
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Style="color: #666;">Nitrate (NO??)</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight: 500;">@Parameters.Nitrate.ToString("F1") ppm</MudText>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Style="color: #666;">Calcium (Ca²?)</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight: 500;">@Parameters.Calcium.ToString("F1") ppm</MudText>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Style="color: #666;">Magnesium (Mg²?)</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight: 500;">@Parameters.Magnesium.ToString("F1") ppm</MudText>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Style="color: #666;">Potassium (K?)</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight: 500;">@Parameters.Potassium.ToString("F1") ppm</MudText>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Style="color: #666;">Sulfur (SO?²?)</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight: 500;">@Parameters.Sulfur.ToString("F1") ppm</MudText>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Style="color: #666;">Total Dissolved</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight: 500; color: #2196f3;">@Parameters.GetTotalDissolved().ToString("F1") ppm</MudText>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudStack>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public WaterParameters Parameters { get; set; } = WaterParameters.CreateDefault();
+
+    [Parameter]
+    public EventCallback<WaterParameters> OnParametersChanged { get; set; }
+
+    private WaterParameters EditingParams = WaterParameters.CreateDefault();
+    private bool IsEditing = false;
+
+    private void StartEdit()
+    {
+        EditingParams = new WaterParameters
+        {
+            Nitrate = Parameters.Nitrate,
+            Calcium = Parameters.Calcium,
+            Magnesium = Parameters.Magnesium,
+            Potassium = Parameters.Potassium,
+            Sulfur = Parameters.Sulfur
+        };
+        IsEditing = true;
+    }
+
+    private async Task SaveChanges()
+    {
+        Parameters = new WaterParameters
+        {
+            Nitrate = EditingParams.Nitrate,
+            Calcium = EditingParams.Calcium,
+            Magnesium = EditingParams.Magnesium,
+            Potassium = EditingParams.Potassium,
+            Sulfur = EditingParams.Sulfur
+        };
+        IsEditing = false;
+        await OnParametersChanged.InvokeAsync(Parameters);
+    }
+
+    private void CancelChanges()
+    {
+        IsEditing = false;
+    }
+}

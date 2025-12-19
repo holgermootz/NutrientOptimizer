@@ -14,11 +14,22 @@
     }
     else
     {
-        <MudChart ChartType="ChartType.Bar" 
-                  ChartSeries="@chartSeries" 
-                  XAxisLabels="@xAxisLabels.ToArray()" 
-                  Width="100%" 
-                  Height="500px" />
+        <style>
+            .chart-container .mud-charts-bar .mud-series:nth-child(1) .mud-bar {
+                fill: #999999 !important;
+            }
+            .chart-container .mud-charts-bar .mud-series:nth-child(2) .mud-bar {
+                fill: #4caf50 !important;
+            }
+        </style>
+        
+        <div class="chart-container">
+            <MudChart ChartType="ChartType.Bar" 
+                      ChartSeries="@chartSeries" 
+                      XAxisLabels="@xAxisLabels.ToArray()" 
+                      Width="100%" 
+                      Height="500px" />
+        </div>
 
         <!-- Legend -->
         <MudDivider Class="my-2" />
