@@ -24,15 +24,18 @@ builder.Services.AddScoped<SelectedSubstancesService>();
 var app = builder.Build();
 
 // Initialize database on startup
-var dbInitService = app.Services.CreateScope().ServiceProvider.GetRequiredService<DatabaseInitializationService>();
-try
+using (var scope = app.Services.CreateScope())
 {
-    dbInitService.InitializeDatabaseAsync().GetAwaiter().GetResult();
-    Console.WriteLine("? Database initialization completed successfully");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"ERROR during database initialization: {ex.Message}");
+    var dbInitService = scope.ServiceProvider.GetRequiredService<DatabaseInitializationService>();
+    try
+    {
+        dbInitService.InitializeDatabaseAsync().GetAwaiter().GetResult();
+        Console.WriteLine("Database initialization completed successfully");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"ERROR during database initialization: {ex.Message}");
+    }
 }
 
 // Configure the HTTP request pipeline.

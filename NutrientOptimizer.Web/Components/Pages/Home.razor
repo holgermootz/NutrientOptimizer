@@ -149,46 +149,83 @@ else
             </MudButton>
         </MudStack>
 
-        <!-- Results - Collapsible (shows when available) -->
+        <!-- Results - Always Visible (not collapsible) -->
         @if (result != null)
         {
-            <MudExpansionPanel Text="📊 CALCULATION RESULTS" Icon="@Icons.Material.Filled.ExpandMore" Dense="false" IsInitiallyExpanded="true">
-                <MudPaper Elevation="0" Class="pa-4">
-                    <MudStack Spacing="3">
-                        @if (result.InfeasibilityReasons.Any())
+            <MudPaper Elevation="1" Class="pa-6">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h6" Style="font-weight: 400; letter-spacing: 0.5px;">📊 CALCULATION RESULTS</MudText>
+                        @if (isCalculating)
                         {
-                            <MudAlert Severity="Severity.Warning" Dense="false">
-                                <MudStack Spacing="1">
-                                    <MudText Typo="Typo.body2"><strong>⚠️ NOTES</strong></MudText>
-                                    @foreach (var reason in result.InfeasibilityReasons)
+                            <MudSpacer />
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Recalculating...</MudText>
+                        }
+                    </MudStack>
+
+                    <MudDivider />
+
+                    <MudStack Spacing="3">
+                        @if (result.Success)
+                        {
+                            <!-- Recipe Display -->
+                            <MudPaper Elevation="0" Class="pa-4" Style="background-color: #f0f7f0; border-left: 4px solid #4caf50;">
+                                <MudStack Spacing="2">
+                                    <MudText Typo="Typo.subtitle2" Style="color: #2e7d32; font-weight: 500;">✓ Recipe (g/L)</MudText>
+                                    @if (result.SaltAmounts.Any())
                                     {
-                                        <MudText Typo="Typo.body2" Style="font-size: 0.9rem;">• @reason</MudText>
+                                        <MudStack Spacing="1">
+                                            @foreach (var kv in result.SaltAmounts.OrderBy(k => k.Key.Name))
+                                            {
+                                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                    <MudText Typo="Typo.body2" Style="min-width: 200px;">@kv.Key.Name</MudText>
+                                                    <MudText Typo="Typo.body2" Style="font-weight: 500; font-family: monospace;">@kv.Value.ToString("F4") g/L</MudText>
+                                                </MudStack>
+                                            }
+                                        </MudStack>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">(No salts required)</MudText>
                                     }
                                 </MudStack>
-                            </MudAlert>
-                        }
+                            </MudPaper>
 
-                        <MudPaper Elevation="0" Class="pa-4" Style="background-color: #fafaf8; border: 1px solid #e8e8e3;">
-                            @if (result.Success)
-                            {
+                            <!-- Chart Results -->
+                            <ResultsChart Result="result" />
+                        }
+                        else
+                        {
+                            <!-- Failure Display -->
+                            <MudAlert Severity="Severity.Error" Dense="false">
                                 <MudStack Spacing="2">
-                                    <MudText Typo="Typo.body1"><strong>✓ SUCCESS</strong></MudText>
-                                    <MudDivider />
-                                    <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.6;">@result.ToString()</MudText>
+                                    <MudText Typo="Typo.body2"><strong>✗ OPTIMIZATION FAILED</strong></MudText>
+                                    <MudText Typo="Typo.body2">@result.ReasonForTermination</MudText>
                                 </MudStack>
-                            }
-                            else
+                            </MudAlert>
+
+                            <!-- Chart for Failed Solution (if partial results available) -->
+                            @if (result.IonComparisons.Any())
                             {
-                                <MudStack Spacing="2">
-                                    <MudText Typo="Typo.body1" Color="Color.Error"><strong>✗ OPTIMIZATION FAILED</strong></MudText>
-                                    <MudDivider />
-                                    <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.6;">@result.ToString()</MudText>
-                                </MudStack>
+                                <ResultsChart Result="result" />
                             }
-                        </MudPaper>
+                            else if (result.InfeasibilityReasons.Any())
+                            {
+                                <MudAlert Severity="Severity.Warning" Dense="false">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2">Reasons:</MudText>
+                                        @foreach (var reason in result.InfeasibilityReasons)
+                                        {
+                                            <MudText Typo="Typo.body2">• @reason</MudText>
+                                        }
+                                    </MudStack>
+                                </MudAlert>
+                            }
+                        }
                     </MudStack>
-                </MudPaper>
-            </MudExpansionPanel>
+                </MudStack>
+            </MudPaper>
         }
     </MudStack>
 }
@@ -209,7 +246,7 @@ else
         {
             AvailableProfiles = PlantProfileLibrary.Profiles.ToList();
             AllSalts = SaltService.GetAllSalts();
-            SelectionService.OnSelectionChanged += StateHasChanged;
+            SelectionService.OnSelectionChanged += OnSaltSelectionChanged;
         }
         catch (Exception ex)
         {
@@ -220,6 +257,16 @@ else
     private void OnProfileChanged(int value)
     {
         selectedProfileIndex = value;
+    }
+
+    private void OnSaltSelectionChanged()
+    {
+        StateHasChanged();
+        // Auto-recalculate if we have both profile and salts selected
+        if (selectedProfileIndex >= 0 && SelectedSaltsList.Count > 0 && !isCalculating)
+        {
+            _ = Calculate();
+        }
     }
 
     private void RemoveSalt(Salt salt)
@@ -277,6 +324,6 @@ else
 
     async ValueTask IAsyncDisposable.DisposeAsync()
     {
-        SelectionService.OnSelectionChanged -= StateHasChanged;
+        SelectionService.OnSelectionChanged -= OnSaltSelectionChanged;
     }
 }

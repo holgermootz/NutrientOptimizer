@@ -1,0 +1,82 @@
+@using System
+@using NutrientOptimizer.Math
+@using NutrientOptimizer.Core
+@using MudBlazor
+@using System.Collections.Generic
+@using System.Linq
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h6" Class="mb-2">Ion Concentrations Comparison</MudText>
+
+    @if (Result.IonComparisons.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No ion data available</MudAlert>
+    }
+    else
+    {
+        <MudChart ChartType="ChartType.Bar" 
+                  ChartSeries="@chartSeries" 
+                  XAxisLabels="@xAxisLabels.ToArray()" 
+                  Width="100%" 
+                  Height="500px" />
+
+        <!-- Legend -->
+        <MudDivider Class="my-2" />
+        <MudStack Row="true" Spacing="3" Style="flex-wrap: wrap;">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <div style="width: 20px; height: 16px; background: #999999; border-radius: 2px;"></div>
+                <MudText Typo="Typo.caption">Target value (ppm)</MudText>
+            </MudStack>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <div style="width: 20px; height: 16px; background: #4caf50; border-radius: 2px;"></div>
+                <MudText Typo="Typo.caption">Actual value (ppm)</MudText>
+            </MudStack>
+        </MudStack>
+    }
+</MudStack>
+
+@code {
+    [Parameter]
+    public OptimizationResult Result { get; set; } = new();
+
+    private List<string> xAxisLabels
+    {
+        get
+        {
+            return Result.IonComparisons
+                .OrderBy(c => c.Ion.ToString())
+                .Select(c => c.Ion.GetAbbreviation())
+                .ToList();
+        }
+    }
+
+    private List<ChartSeries> chartSeries
+    {
+        get
+        {
+            var targetValues = Result.IonComparisons
+                .OrderBy(c => c.Ion.ToString())
+                .Select(c => c.TargetPpm)
+                .ToArray();
+
+            var actualValues = Result.IonComparisons
+                .OrderBy(c => c.Ion.ToString())
+                .Select(c => c.ActualPpm)
+                .ToArray();
+
+            return new()
+            {
+                new()
+                {
+                    Name = "Target (ppm)",
+                    Data = targetValues
+                },
+                new()
+                {
+                    Name = "Actual (ppm)",
+                    Data = actualValues
+                }
+            };
+        }
+    }
+}
