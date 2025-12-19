@@ -1,5 +1,4 @@
 ﻿using NutrientOptimizer.Core.Models;
-
 namespace NutrientOptimizer.Core;
 
 public static class PlantProfileLibrary
@@ -15,25 +14,24 @@ public static class PlantProfileLibrary
             Description = "Common target ranges for hydroponic lettuce (e.g., Butterhead, Romaine)",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     150, 250, 200),
-                new(Ion.Ammonium,      0,  30,  10),  // Low ammonium preferred
-                new(Ion.Potassium,   150, 300, 200),
+                new(Ion.Nitrate, 150, 250, 200),
+                new(Ion.Ammonium, 0, 30, 10), // Low ammonium preferred
+                new(Ion.Potassium, 150, 300, 200),
                 new(Ion.Calcium, 100, 220, 160),
-                new(Ion.Magnesium,    30,  80,  50),
-                new(Ion.Phosphate,    30,  70,  50),  // as elemental P
-                new(Ion.Sulfate,      50, 200, 100),
+                new(Ion.Magnesium, 30, 80, 50),
+                new(Ion.Phosphate, 30, 70, 50), // as elemental P
+                new(Ion.Sulfate, 50, 200, 100),
                 // Micros (ppm)
-                new(Ion.Iron,         1.5, 4.0, 2.5),
-                new(Ion.Manganese,    0.5, 2.0, 1.0),
-                new(Ion.Zinc,        0.05, 0.5, 0.2),
-                new(Ion.Copper,     0.02, 0.2, 0.05),
-                new(Ion.Boron,       0.2, 1.0, 0.5),
+                new(Ion.Iron, 1.5, 4.0, 2.5),
+                new(Ion.Manganese, 0.5, 2.0, 1.0),
+                new(Ion.Zinc, 0.05, 0.5, 0.2),
+                new(Ion.Copper, 0.02, 0.2, 0.05),
+                new(Ion.Boron, 0.2, 1.0, 0.5),
                 new(Ion.Molybdenum, 0.01, 0.1, 0.05)
             },
             MinEC = 1.2,
             MaxEC = 2.0
         },
-
         // Tomato - Fruiting Stage (more demanding)
         new PlantProfile
         {
@@ -41,24 +39,23 @@ public static class PlantProfileLibrary
             Description = "Typical hydroponic tomato during fruit development",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     180, 300, 250),
-                new(Ion.Ammonium,      0,  20,  10),
-                new(Ion.Potassium,   250, 400, 350),
-                new(Ion.Calcium,     120, 250, 200),
-                new(Ion.Magnesium,    40, 100,  70),
-                new(Ion.Phosphate,    40,  80,  60),
-                new(Ion.Sulfate,     100, 300, 200),
-                new(Ion.Iron,         2.0, 5.0, 3.0),
-                new(Ion.Manganese,    0.5, 2.5, 1.5),
-                new(Ion.Zinc,        0.1, 0.8, 0.3),
-                new(Ion.Copper,     0.03, 0.3, 0.1),
-                new(Ion.Boron,       0.3, 1.2, 0.7),
+                new(Ion.Nitrate, 180, 300, 250),
+                new(Ion.Ammonium, 0, 20, 10),
+                new(Ion.Potassium, 250, 400, 350),
+                new(Ion.Calcium, 120, 250, 200),
+                new(Ion.Magnesium, 40, 100, 70),
+                new(Ion.Phosphate, 40, 80, 60),
+                new(Ion.Sulfate, 100, 300, 200),
+                new(Ion.Iron, 2.0, 5.0, 3.0),
+                new(Ion.Manganese, 0.5, 2.5, 1.5),
+                new(Ion.Zinc, 0.1, 0.8, 0.3),
+                new(Ion.Copper, 0.03, 0.3, 0.1),
+                new(Ion.Boron, 0.3, 1.2, 0.7),
                 new(Ion.Molybdenum, 0.02, 0.15, 0.05)
             },
             MinEC = 2.0,
             MaxEC = 3.5
         },
-
         // Basil - Fast growing herb
         new PlantProfile
         {
@@ -66,24 +63,23 @@ public static class PlantProfileLibrary
             Description = "Sweet basil and culinary varieties - fast growing herb stage",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     140, 200, 170),
-                new(Ion.Ammonium,      0,  25,   8),
-                new(Ion.Potassium,   120, 200, 160),
-                new(Ion.Calcium,      80, 150, 120),
-                new(Ion.Magnesium,    25,  60,  40),
-                new(Ion.Phosphate,    25,  50,  35),
-                new(Ion.Sulfate,      50, 150,  80),
-                new(Ion.Iron,         1.5, 3.5, 2.5),
-                new(Ion.Manganese,    0.5, 1.5, 0.8),
-                new(Ion.Zinc,        0.05, 0.3, 0.15),
-                new(Ion.Copper,     0.02, 0.15, 0.05),
-                new(Ion.Boron,       0.3, 0.8, 0.5),
+                new(Ion.Nitrate, 140, 200, 170),
+                new(Ion.Ammonium, 0, 25, 8),
+                new(Ion.Potassium, 120, 200, 160),
+                new(Ion.Calcium, 80, 150, 120),
+                new(Ion.Magnesium, 25, 60, 40),
+                new(Ion.Phosphate, 25, 50, 35),
+                new(Ion.Sulfate, 50, 150, 80),
+                new(Ion.Iron, 1.5, 3.5, 2.5),
+                new(Ion.Manganese, 0.5, 1.5, 0.8),
+                new(Ion.Zinc, 0.05, 0.3, 0.15),
+                new(Ion.Copper, 0.02, 0.15, 0.05),
+                new(Ion.Boron, 0.3, 0.8, 0.5),
                 new(Ion.Molybdenum, 0.01, 0.08, 0.03)
             },
             MinEC = 1.0,
             MaxEC = 1.8
         },
-
         // Cucumber - Flowering/Fruiting
         new PlantProfile
         {
@@ -91,24 +87,23 @@ public static class PlantProfileLibrary
             Description = "Greenhouse cucumber during flowering and fruit set",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     160, 280, 220),
-                new(Ion.Ammonium,      0,  20,   8),
-                new(Ion.Potassium,   180, 300, 240),
-                new(Ion.Calcium,     100, 200, 150),
-                new(Ion.Magnesium,    35,  80,  55),
-                new(Ion.Phosphate,    30,  60,  45),
-                new(Ion.Sulfate,      60, 180, 100),
-                new(Ion.Iron,         1.5, 4.0, 2.5),
-                new(Ion.Manganese,    0.5, 2.0, 1.0),
-                new(Ion.Zinc,        0.1, 0.5, 0.25),
-                new(Ion.Copper,     0.03, 0.2, 0.08),
-                new(Ion.Boron,       0.4, 1.0, 0.6),
+                new(Ion.Nitrate, 160, 280, 220),
+                new(Ion.Ammonium, 0, 20, 8),
+                new(Ion.Potassium, 180, 300, 240),
+                new(Ion.Calcium, 100, 200, 150),
+                new(Ion.Magnesium, 35, 80, 55),
+                new(Ion.Phosphate, 30, 60, 45),
+                new(Ion.Sulfate, 60, 180, 100),
+                new(Ion.Iron, 1.5, 4.0, 2.5),
+                new(Ion.Manganese, 0.5, 2.0, 1.0),
+                new(Ion.Zinc, 0.1, 0.5, 0.25),
+                new(Ion.Copper, 0.03, 0.2, 0.08),
+                new(Ion.Boron, 0.4, 1.0, 0.6),
                 new(Ion.Molybdenum, 0.01, 0.1, 0.05)
             },
             MinEC = 1.4,
             MaxEC = 2.4
         },
-
         // Peppers - Fruiting Stage
         new PlantProfile
         {
@@ -116,24 +111,23 @@ public static class PlantProfileLibrary
             Description = "Sweet bell peppers and chili peppers during fruit development",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     170, 280, 220),
-                new(Ion.Ammonium,      0,  20,  10),
-                new(Ion.Potassium,   220, 350, 280),
-                new(Ion.Calcium,     130, 220, 170),
-                new(Ion.Magnesium,    40,  90,  60),
-                new(Ion.Phosphate,    35,  70,  50),
-                new(Ion.Sulfate,      80, 200, 120),
-                new(Ion.Iron,         2.0, 4.5, 3.0),
-                new(Ion.Manganese,    0.8, 2.5, 1.5),
-                new(Ion.Zinc,        0.15, 0.6, 0.3),
-                new(Ion.Copper,     0.05, 0.25, 0.12),
-                new(Ion.Boron,       0.5, 1.2, 0.8),
+                new(Ion.Nitrate, 170, 280, 220),
+                new(Ion.Ammonium, 0, 20, 10),
+                new(Ion.Potassium, 220, 350, 280),
+                new(Ion.Calcium, 130, 220, 170),
+                new(Ion.Magnesium, 40, 90, 60),
+                new(Ion.Phosphate, 35, 70, 50),
+                new(Ion.Sulfate, 80, 200, 120),
+                new(Ion.Iron, 2.0, 4.5, 3.0),
+                new(Ion.Manganese, 0.8, 2.5, 1.5),
+                new(Ion.Zinc, 0.15, 0.6, 0.3),
+                new(Ion.Copper, 0.05, 0.25, 0.12),
+                new(Ion.Boron, 0.5, 1.2, 0.8),
                 new(Ion.Molybdenum, 0.02, 0.12, 0.06)
             },
             MinEC = 1.8,
             MaxEC = 3.0
         },
-
         // Strawberry - Flowering/Fruiting
         new PlantProfile
         {
@@ -141,24 +135,23 @@ public static class PlantProfileLibrary
             Description = "Strawberries during flowering and fruit development",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     130, 200, 160),
-                new(Ion.Ammonium,      0,  15,   5),
-                new(Ion.Potassium,   180, 280, 220),
-                new(Ion.Calcium,     100, 180, 140),
-                new(Ion.Magnesium,    30,  70,  45),
-                new(Ion.Phosphate,    30,  60,  45),
-                new(Ion.Sulfate,      50, 150,  80),
-                new(Ion.Iron,         1.5, 3.5, 2.5),
-                new(Ion.Manganese,    0.8, 2.0, 1.2),
-                new(Ion.Zinc,        0.1, 0.4, 0.2),
-                new(Ion.Copper,     0.05, 0.2, 0.1),
-                new(Ion.Boron,       0.6, 1.2, 0.9),
+                new(Ion.Nitrate, 130, 200, 160),
+                new(Ion.Ammonium, 0, 15, 5),
+                new(Ion.Potassium, 180, 280, 220),
+                new(Ion.Calcium, 100, 180, 140),
+                new(Ion.Magnesium, 30, 70, 45),
+                new(Ion.Phosphate, 30, 60, 45),
+                new(Ion.Sulfate, 50, 150, 80),
+                new(Ion.Iron, 1.5, 3.5, 2.5),
+                new(Ion.Manganese, 0.8, 2.0, 1.2),
+                new(Ion.Zinc, 0.1, 0.4, 0.2),
+                new(Ion.Copper, 0.05, 0.2, 0.1),
+                new(Ion.Boron, 0.6, 1.2, 0.9),
                 new(Ion.Molybdenum, 0.01, 0.08, 0.04)
             },
             MinEC = 1.3,
             MaxEC = 2.1
         },
-
         // Spinach - Vegetative/Harvest
         new PlantProfile
         {
@@ -166,24 +159,23 @@ public static class PlantProfileLibrary
             Description = "Spinach during vegetative growth and harvest stage",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     160, 240, 200),
-                new(Ion.Ammonium,      0,  30,  10),
-                new(Ion.Potassium,   120, 200, 160),
-                new(Ion.Calcium,      80, 150, 110),
-                new(Ion.Magnesium,    30,  70,  45),
-                new(Ion.Phosphate,    25,  50,  35),
-                new(Ion.Sulfate,      40, 120,  70),
-                new(Ion.Iron,         2.0, 4.0, 3.0),
-                new(Ion.Manganese,    1.0, 2.5, 1.5),
-                new(Ion.Zinc,        0.1, 0.5, 0.25),
-                new(Ion.Copper,     0.05, 0.2, 0.1),
-                new(Ion.Boron,       0.3, 0.8, 0.5),
+                new(Ion.Nitrate, 160, 240, 200),
+                new(Ion.Ammonium, 0, 30, 10),
+                new(Ion.Potassium, 120, 200, 160),
+                new(Ion.Calcium, 80, 150, 110),
+                new(Ion.Magnesium, 30, 70, 45),
+                new(Ion.Phosphate, 25, 50, 35),
+                new(Ion.Sulfate, 40, 120, 70),
+                new(Ion.Iron, 2.0, 4.0, 3.0),
+                new(Ion.Manganese, 1.0, 2.5, 1.5),
+                new(Ion.Zinc, 0.1, 0.5, 0.25),
+                new(Ion.Copper, 0.05, 0.2, 0.1),
+                new(Ion.Boron, 0.3, 0.8, 0.5),
                 new(Ion.Molybdenum, 0.02, 0.1, 0.05)
             },
             MinEC = 1.2,
             MaxEC = 1.9
         },
-
         // Kale - Leafy Green
         new PlantProfile
         {
@@ -191,24 +183,23 @@ public static class PlantProfileLibrary
             Description = "Kale and other brassica leafy greens during growth",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     180, 260, 220),
-                new(Ion.Ammonium,      0,  25,  10),
-                new(Ion.Potassium,   140, 220, 180),
-                new(Ion.Calcium,     100, 170, 135),
-                new(Ion.Magnesium,    35,  75,  50),
-                new(Ion.Phosphate,    30,  60,  45),
-                new(Ion.Sulfate,      50, 150,  80),
-                new(Ion.Iron,         2.5, 5.0, 3.5),
-                new(Ion.Manganese,    1.0, 2.5, 1.5),
-                new(Ion.Zinc,        0.15, 0.6, 0.3),
-                new(Ion.Copper,     0.05, 0.25, 0.12),
-                new(Ion.Boron,       0.4, 1.0, 0.6),
+                new(Ion.Nitrate, 180, 260, 220),
+                new(Ion.Ammonium, 0, 25, 10),
+                new(Ion.Potassium, 140, 220, 180),
+                new(Ion.Calcium, 100, 170, 135),
+                new(Ion.Magnesium, 35, 75, 50),
+                new(Ion.Phosphate, 30, 60, 45),
+                new(Ion.Sulfate, 50, 150, 80),
+                new(Ion.Iron, 2.5, 5.0, 3.5),
+                new(Ion.Manganese, 1.0, 2.5, 1.5),
+                new(Ion.Zinc, 0.15, 0.6, 0.3),
+                new(Ion.Copper, 0.05, 0.25, 0.12),
+                new(Ion.Boron, 0.4, 1.0, 0.6),
                 new(Ion.Molybdenum, 0.02, 0.1, 0.05)
             },
             MinEC = 1.3,
             MaxEC = 2.1
         },
-
         // Microgreens - High Density
         new PlantProfile
         {
@@ -216,24 +207,23 @@ public static class PlantProfileLibrary
             Description = "Microgreens and sprouts - intensive, short-cycle production",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     100, 180, 140),
-                new(Ion.Ammonium,      0,  20,   5),
-                new(Ion.Potassium,   100, 180, 140),
-                new(Ion.Calcium,      60, 120,  90),
-                new(Ion.Magnesium,    20,  50,  35),
-                new(Ion.Phosphate,    20,  40,  30),
-                new(Ion.Sulfate,      30, 100,  60),
-                new(Ion.Iron,         1.5, 3.0, 2.0),
-                new(Ion.Manganese,    0.5, 1.5, 1.0),
-                new(Ion.Zinc,        0.05, 0.25, 0.15),
-                new(Ion.Copper,     0.02, 0.1, 0.05),
-                new(Ion.Boron,       0.2, 0.6, 0.4),
+                new(Ion.Nitrate, 100, 180, 140),
+                new(Ion.Ammonium, 0, 20, 5),
+                new(Ion.Potassium, 100, 180, 140),
+                new(Ion.Calcium, 60, 120, 90),
+                new(Ion.Magnesium, 20, 50, 35),
+                new(Ion.Phosphate, 20, 40, 30),
+                new(Ion.Sulfate, 30, 100, 60),
+                new(Ion.Iron, 1.5, 3.0, 2.0),
+                new(Ion.Manganese, 0.5, 1.5, 1.0),
+                new(Ion.Zinc, 0.05, 0.25, 0.15),
+                new(Ion.Copper, 0.02, 0.1, 0.05),
+                new(Ion.Boron, 0.2, 0.6, 0.4),
                 new(Ion.Molybdenum, 0.01, 0.05, 0.03)
             },
             MinEC = 0.8,
             MaxEC = 1.4
         },
-
         // Watercress - Aquatic Vegetable
         new PlantProfile
         {
@@ -241,24 +231,23 @@ public static class PlantProfileLibrary
             Description = "Watercress and aquatic greens - prefer lower nutrient levels",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     120, 180, 150),
-                new(Ion.Ammonium,      0,  20,   5),
-                new(Ion.Potassium,    80, 150, 110),
-                new(Ion.Calcium,      60, 120,  90),
-                new(Ion.Magnesium,    20,  50,  35),
-                new(Ion.Phosphate,    20,  40,  30),
-                new(Ion.Sulfate,      30, 100,  60),
-                new(Ion.Iron,         1.5, 3.0, 2.0),
-                new(Ion.Manganese,    0.8, 2.0, 1.2),
-                new(Ion.Zinc,        0.1, 0.4, 0.2),
-                new(Ion.Copper,     0.03, 0.15, 0.08),
-                new(Ion.Boron,       0.3, 0.8, 0.5),
+                new(Ion.Nitrate, 120, 180, 150),
+                new(Ion.Ammonium, 0, 20, 5),
+                new(Ion.Potassium, 80, 150, 110),
+                new(Ion.Calcium, 60, 120, 90),
+                new(Ion.Magnesium, 20, 50, 35),
+                new(Ion.Phosphate, 20, 40, 30),
+                new(Ion.Sulfate, 30, 100, 60),
+                new(Ion.Iron, 1.5, 3.0, 2.0),
+                new(Ion.Manganese, 0.8, 2.0, 1.2),
+                new(Ion.Zinc, 0.1, 0.4, 0.2),
+                new(Ion.Copper, 0.03, 0.15, 0.08),
+                new(Ion.Boron, 0.3, 0.8, 0.5),
                 new(Ion.Molybdenum, 0.01, 0.08, 0.04)
             },
             MinEC = 0.9,
             MaxEC = 1.6
         },
-
         // Eggplant - Fruiting
         new PlantProfile
         {
@@ -266,22 +255,199 @@ public static class PlantProfileLibrary
             Description = "Eggplant/Aubergine during flowering and fruit set",
             IonTargets = new List<IonTarget>
             {
-                new(Ion.Nitrate,     160, 260, 210),
-                new(Ion.Ammonium,      0,  15,   5),
-                new(Ion.Potassium,   200, 320, 260),
-                new(Ion.Calcium,     120, 210, 165),
-                new(Ion.Magnesium,    40,  85,  60),
-                new(Ion.Phosphate,    35,  65,  50),
-                new(Ion.Sulfate,      80, 200, 120),
-                new(Ion.Iron,         2.0, 4.5, 3.0),
-                new(Ion.Manganese,    0.8, 2.5, 1.5),
-                new(Ion.Zinc,        0.15, 0.5, 0.3),
-                new(Ion.Copper,     0.05, 0.2, 0.1),
-                new(Ion.Boron,       0.5, 1.2, 0.8),
+                new(Ion.Nitrate, 160, 260, 210),
+                new(Ion.Ammonium, 0, 15, 5),
+                new(Ion.Potassium, 200, 320, 260),
+                new(Ion.Calcium, 120, 210, 165),
+                new(Ion.Magnesium, 40, 85, 60),
+                new(Ion.Phosphate, 35, 65, 50),
+                new(Ion.Sulfate, 80, 200, 120),
+                new(Ion.Iron, 2.0, 4.5, 3.0),
+                new(Ion.Manganese, 0.8, 2.5, 1.5),
+                new(Ion.Zinc, 0.15, 0.5, 0.3),
+                new(Ion.Copper, 0.05, 0.2, 0.1),
+                new(Ion.Boron, 0.5, 1.2, 0.8),
                 new(Ion.Molybdenum, 0.02, 0.12, 0.06)
             },
             MinEC = 1.6,
             MaxEC = 2.8
+        },
+
+        // ==================== Cannabis Profiles (Research-Based) ====================
+
+        // Bruce Bugbee (Utah State University) - Vegetative
+        new PlantProfile
+        {
+            Name = "Cannabis - Vegetative (Bugbee)",
+            Description = "Bruce Bugbee's recommendations for vegetative stage cannabis (hydroponic/soilless). Lower P than commercial formulas.",
+            IonTargets = new List<IonTarget>
+            {
+                new(Ion.Nitrate, 120, 180, 160),
+                new(Ion.Ammonium, 0, 20, 10),
+                new(Ion.Potassium, 150, 250, 200),
+                new(Ion.Calcium, 80, 160, 120),
+                new(Ion.Magnesium, 30, 70, 50),
+                new(Ion.Phosphate, 10, 25, 15), // elemental P; Bugbee emphasizes low P
+                new(Ion.Sulfate, 50, 150, 100),
+                new(Ion.Iron, 2, 5, 3),
+                new(Ion.Manganese, 0.5, 2, 1),
+                new(Ion.Zinc, 0.1, 0.5, 0.3),
+                new(Ion.Copper, 0.02, 0.2, 0.1),
+                new(Ion.Boron, 0.3, 1, 0.5),
+                new(Ion.Molybdenum, 0.01, 0.1, 0.05)
+            },
+            MinEC = 1.2,
+            MaxEC = 1.6
+        },
+
+        // Bruce Bugbee (Utah State University) - Flowering
+        new PlantProfile
+        {
+            Name = "Cannabis - Flowering (Bugbee)",
+            Description = "Bruce Bugbee's recommendations for flowering cannabis. Increase P to ~50 ppm only in late flower (last 4-5 weeks).",
+            IonTargets = new List<IonTarget>
+            {
+                new(Ion.Nitrate, 120, 180, 160),
+                new(Ion.Ammonium, 0, 20, 10),
+                new(Ion.Potassium, 150, 250, 200),
+                new(Ion.Calcium, 80, 160, 120),
+                new(Ion.Magnesium, 30, 70, 50),
+                new(Ion.Phosphate, 15, 50, 30), // elemental P; raise to 50 ppm late flower
+                new(Ion.Sulfate, 50, 150, 100),
+                new(Ion.Iron, 2, 5, 3),
+                new(Ion.Manganese, 0.5, 2, 1),
+                new(Ion.Zinc, 0.1, 0.5, 0.3),
+                new(Ion.Copper, 0.02, 0.2, 0.1),
+                new(Ion.Boron, 0.3, 1, 0.5),
+                new(Ion.Molybdenum, 0.01, 0.1, 0.05)
+            },
+            MinEC = 1.2,
+            MaxEC = 1.6
+        },
+
+        // Nirit Bernstein (Volcani Center) - Vegetative
+        new PlantProfile
+        {
+            Name = "Cannabis - Vegetative (Bernstein)",
+            Description = "Nirit Bernstein's research-based profile for vegetative medical cannabis (hydroponic/soilless).",
+            IonTargets = new List<IonTarget>
+            {
+                new(Ion.Nitrate, 140, 180, 160),
+                new(Ion.Ammonium, 0, 20, 10),
+                new(Ion.Potassium, 150, 200, 175),
+                new(Ion.Calcium, 100, 200, 150),
+                new(Ion.Magnesium, 40, 80, 60),
+                new(Ion.Phosphate, 20, 40, 30), // elemental P
+                new(Ion.Sulfate, 50, 150, 100),
+                new(Ion.Iron, 2, 5, 3),
+                new(Ion.Manganese, 0.5, 2, 1),
+                new(Ion.Zinc, 0.1, 0.5, 0.3),
+                new(Ion.Copper, 0.02, 0.2, 0.05),
+                new(Ion.Boron, 0.3, 1, 0.5),
+                new(Ion.Molybdenum, 0.01, 0.1, 0.05)
+            },
+            MinEC = 1.4,
+            MaxEC = 2.0
+        },
+
+        // Nirit Bernstein (Volcani Center) - Flowering
+        new PlantProfile
+        {
+            Name = "Cannabis - Flowering (Bernstein)",
+            Description = "Nirit Bernstein's research-based profile for flowering medical cannabis. Lower K, higher P; nutrient restriction can enhance cannabinoids.",
+            IonTargets = new List<IonTarget>
+            {
+                new(Ion.Nitrate, 140, 180, 160), // Do not exceed ~160 ppm N for optimal quality
+                new(Ion.Ammonium, 0, 20, 10),
+                new(Ion.Potassium, 40, 80, 60),
+                new(Ion.Calcium, 100, 200, 150),
+                new(Ion.Magnesium, 30, 60, 45),
+                new(Ion.Phosphate, 40, 80, 60), // elemental P
+                new(Ion.Sulfate, 50, 150, 100),
+                new(Ion.Iron, 2, 5, 3),
+                new(Ion.Manganese, 0.5, 2, 1),
+                new(Ion.Zinc, 0.1, 0.5, 0.3),
+                new(Ion.Copper, 0.02, 0.2, 0.05),
+                new(Ion.Boron, 0.3, 1, 0.5),
+                new(Ion.Molybdenum, 0.01, 0.1, 0.05)
+            },
+            MinEC = 1.4,
+            MaxEC = 2.0
+        },
+
+        // Bevan et al. (2021) - Flowering (RSM optimization)
+        new PlantProfile
+        {
+            Name = "Cannabis - Flowering (Bevan et al. 2021)",
+            Description = "Response surface methodology optimization (Frontiers in Plant Science 2021) for maximum inflorescence yield in flowering stage hydroponic cannabis (high-THC cultivar).",
+            IonTargets = new List<IonTarget>
+            {
+                new(Ion.Nitrate, 160, 220, 194),
+                new(Ion.Ammonium, 0, 20, 10),
+                new(Ion.Potassium, 180, 280, 230),
+                new(Ion.Calcium, 80, 160, 120),
+                new(Ion.Magnesium, 30, 70, 50),
+                new(Ion.Phosphate, 40, 80, 59), // elemental P
+                new(Ion.Sulfate, 50, 150, 100),
+                new(Ion.Iron, 2, 5, 3),
+                new(Ion.Manganese, 0.5, 2, 1),
+                new(Ion.Zinc, 0.1, 0.5, 0.3),
+                new(Ion.Copper, 0.02, 0.2, 0.1),
+                new(Ion.Boron, 0.3, 1, 0.5),
+                new(Ion.Molybdenum, 0.01, 0.1, 0.05)
+            },
+            MinEC = 1.4,
+            MaxEC = 2.0
+        },
+
+        // Desaulniers Bisson et al. (2024) - Vegetative (RSM optimization)
+        new PlantProfile
+        {
+            Name = "Cannabis - Vegetative (Desaulniers Bisson et al. 2024)",
+            Description = "Response surface methodology optimization (Frontiers in Plant Science 2024) for vegetative stage hydroponic cannabis using central composite design.",
+            IonTargets = new List<IonTarget>
+            {
+                new(Ion.Nitrate, 160, 240, 200),
+                new(Ion.Ammonium, 0, 20, 10),
+                new(Ion.Potassium, 140, 210, 175),
+                new(Ion.Calcium, 80, 160, 120),
+                new(Ion.Magnesium, 30, 70, 50),
+                new(Ion.Phosphate, 40, 80, 60), // elemental P
+                new(Ion.Sulfate, 50, 150, 100),
+                new(Ion.Iron, 2, 5, 3),
+                new(Ion.Manganese, 0.5, 2, 1),
+                new(Ion.Zinc, 0.1, 0.5, 0.3),
+                new(Ion.Copper, 0.02, 0.2, 0.1),
+                new(Ion.Boron, 0.3, 1, 0.5),
+                new(Ion.Molybdenum, 0.01, 0.1, 0.05)
+            },
+            MinEC = 1.3,
+            MaxEC = 1.8
+        },
+
+        // Westmoreland & Bugbee (2025) - Flowering
+        new PlantProfile
+        {
+            Name = "Cannabis - Flowering (Westmoreland & Bugbee 2025)",
+            Description = "Updated Bugbee lab recommendations (Hershkowitz, Westmoreland & Bugbee 2025, Frontiers in Plant Science). No yield or cannabinoid benefit above 15-30 ppm P; elevated EC/P does not improve outcomes.",
+            IonTargets = new List<IonTarget>
+            {
+                new(Ion.Nitrate, 120, 180, 160),
+                new(Ion.Ammonium, 0, 20, 10),
+                new(Ion.Potassium, 150, 250, 200),
+                new(Ion.Calcium, 80, 160, 120),
+                new(Ion.Magnesium, 30, 70, 50),
+                new(Ion.Phosphate, 10, 30, 15), // elemental P; no benefit above 15-30 ppm
+                new(Ion.Sulfate, 50, 150, 100),
+                new(Ion.Iron, 2, 5, 3),
+                new(Ion.Manganese, 0.5, 2, 1),
+                new(Ion.Zinc, 0.1, 0.5, 0.3),
+                new(Ion.Copper, 0.02, 0.2, 0.1),
+                new(Ion.Boron, 0.3, 1, 0.5),
+                new(Ion.Molybdenum, 0.01, 0.1, 0.05)
+            },
+            MinEC = 1.2,
+            MaxEC = 1.6
         },
 
         // Test Profiles

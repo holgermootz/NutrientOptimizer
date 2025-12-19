@@ -261,7 +261,7 @@ else
 
     private void OnSaltSelectionChanged()
     {
-        StateHasChanged();
+        // Only trigger recalculation without full StateHasChanged
         // Auto-recalculate if we have both profile and salts selected
         if (selectedProfileIndex >= 0 && SelectedSaltsList.Count > 0 && !isCalculating)
         {
@@ -272,13 +272,14 @@ else
     private void RemoveSalt(Salt salt)
     {
         SelectionService.RemoveSalt(salt);
-        StateHasChanged();
+        // Only trigger recalculation, not full page refresh
+        OnSaltSelectionChanged();
     }
 
     private void ClearAllSalts()
     {
         SelectionService.ClearSelection();
-        StateHasChanged();
+        // Calculate will call StateHasChanged when done
     }
 
     private async Task Calculate()

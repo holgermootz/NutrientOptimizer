@@ -6,7 +6,6 @@
 
 @inject SaltDatabaseService SaltService
 @inject SelectedSubstancesService SelectionService
-@implements IDisposable
 
 <MudStack Spacing="3">
     <!-- Search and Filter -->
@@ -52,8 +51,6 @@
         {
             AllSalts = SaltService.GetAllSalts();
             Console.WriteLine($"DEBUG: Loaded {AllSalts?.Count ?? 0} salts");
-            SelectionService.OnSelectionChanged += StateHasChanged;
-            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -86,10 +83,5 @@
         
         Console.WriteLine($"DEBUG: FilteredSaltsByType({type}) = {filtered.Count} salts");
         return filtered;
-    }
-
-    void IDisposable.Dispose()
-    {
-        SelectionService.OnSelectionChanged -= StateHasChanged;
     }
 }
