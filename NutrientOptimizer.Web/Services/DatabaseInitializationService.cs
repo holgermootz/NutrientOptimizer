@@ -268,7 +268,9 @@ public class DatabaseInitializationService
 
                 substances.Add(substance);
             }
-            catch { }
+            catch 
+            { 
+            }
         }
 
         return substances;

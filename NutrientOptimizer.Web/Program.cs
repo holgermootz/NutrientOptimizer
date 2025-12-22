@@ -21,6 +21,7 @@ builder.Services.AddScoped<DatabaseInitializationService>();
 builder.Services.AddScoped<SaltDatabaseService>();
 builder.Services.AddScoped<SelectedSubstancesService>();
 builder.Services.AddScoped<WaterParametersService>();
+builder.Services.AddScoped<PersistenceService>();
 
 var app = builder.Build();
 

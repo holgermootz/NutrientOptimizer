@@ -90,26 +90,35 @@ public class SelectedSubstancesService
     /// <summary>
     /// Set selections from a list (used when loading from storage)
     /// </summary>
-    public void SetSelections(List<(string name, string formula)> saltIds, List<Salt> allSalts)
+    public void SetSelections(List<SelectedSaltModel> saltModels, List<Salt> allSalts)
     {
         _selectedSalts.Clear();
         
-        foreach (var (name, formula) in saltIds)
+        foreach (var model in saltModels)
         {
-            var salt = allSalts.FirstOrDefault(s => s.Name == name && s.Formula == formula);
+            var salt = allSalts.FirstOrDefault(s => s.Name == model.Name && s.Formula == model.Formula);
             if (salt != null)
             {
                 _selectedSalts.Add(salt);
+                Console.WriteLine($"[SelectedSubstancesService] Loaded salt: {salt.Name}");
+            }
+            else
+            {
+                Console.WriteLine($"[SelectedSubstancesService] WARNING: Salt not found: {model.Name} ({model.Formula})");
             }
         }
+        
+        Console.WriteLine($"[SelectedSubstancesService] SetSelections completed, loaded {_selectedSalts.Count} salts");
+        // Notify subscribers that selection has changed
+        NotifyChanged();
     }
 
     /// <summary>
     /// Get selections as serializable format for localStorage
     /// </summary>
-    public List<(string name, string formula)> GetSelectionsForStorage()
+    public List<SelectedSaltModel> GetSelectionsForStorage()
     {
-        return _selectedSalts.Select(s => (s.Name, s.Formula)).ToList();
+        return _selectedSalts.Select(s => new SelectedSaltModel { Name = s.Name, Formula = s.Formula }).ToList();
     }
 
     /// <summary>

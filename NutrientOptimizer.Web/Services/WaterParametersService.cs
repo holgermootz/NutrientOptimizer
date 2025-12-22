@@ -17,22 +17,28 @@ public class WaterParametersService
     /// <summary>
     /// Get current water parameters
     /// </summary>
-    public WaterParameters GetParameters() => new()
+    public WaterParameters GetParameters()
     {
-        Nitrate = _parameters.Nitrate,
-        Calcium = _parameters.Calcium,
-        Magnesium = _parameters.Magnesium,
-        Potassium = _parameters.Potassium,
-        Sulfur = _parameters.Sulfur
-    };
+        return _parameters;
+    }
 
     /// <summary>
     /// Update water parameters
     /// </summary>
     public void SetParameters(WaterParameters parameters)
     {
-        _parameters = parameters;
-        NotifyChanged();
+        if (parameters != null)
+        {
+            _parameters = new WaterParameters
+            {
+                Nitrate = parameters.Nitrate,
+                Calcium = parameters.Calcium,
+                Magnesium = parameters.Magnesium,
+                Potassium = parameters.Potassium,
+                Sulfur = parameters.Sulfur
+            };
+            NotifyChanged();
+        }
     }
 
     /// <summary>

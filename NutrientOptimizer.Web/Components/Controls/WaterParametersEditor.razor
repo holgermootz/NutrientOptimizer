@@ -1,6 +1,9 @@
 @using NutrientOptimizer.Core
 @using NutrientOptimizer.Core.Models
 @using MudBlazor
+@using NutrientOptimizer.Web.Services
+
+@inject WaterParametersService WaterParamsService
 
 <MudPaper Elevation="0" Class="pa-6" Style="background-color: #f5f9ff; border: 1px solid #90caf9;">
     <MudStack Spacing="3">
@@ -134,6 +137,22 @@
     private WaterParameters EditingParams = WaterParameters.CreateDefault();
     private bool IsEditing = false;
 
+    protected override void OnParametersSet()
+    {
+        // Ensure EditingParams stays in sync with Parameters
+        if (!IsEditing && Parameters != null)
+        {
+            EditingParams = new WaterParameters
+            {
+                Nitrate = Parameters.Nitrate,
+                Calcium = Parameters.Calcium,
+                Magnesium = Parameters.Magnesium,
+                Potassium = Parameters.Potassium,
+                Sulfur = Parameters.Sulfur
+            };
+        }
+    }
+
     private void StartEdit()
     {
         EditingParams = new WaterParameters
@@ -149,7 +168,9 @@
 
     private async Task SaveChanges()
     {
-        Parameters = new WaterParameters
+        Console.WriteLine($"SaveChanges called with: NO??={EditingParams.Nitrate}, Ca²?={EditingParams.Calcium}, Mg²?={EditingParams.Magnesium}, K?={EditingParams.Potassium}, SO?²?={EditingParams.Sulfur}");
+        
+        var newParams = new WaterParameters
         {
             Nitrate = EditingParams.Nitrate,
             Calcium = EditingParams.Calcium,
@@ -157,7 +178,16 @@
             Potassium = EditingParams.Potassium,
             Sulfur = EditingParams.Sulfur
         };
+        
+        // Store in service
+        WaterParamsService.SetParameters(newParams);
+        
+        // Update local parameter
+        Parameters = newParams;
+        
         IsEditing = false;
+        
+        // Notify parent
         await OnParametersChanged.InvokeAsync(Parameters);
     }
 

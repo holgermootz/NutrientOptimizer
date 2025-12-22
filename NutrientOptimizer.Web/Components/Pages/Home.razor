@@ -10,6 +10,7 @@
 @inject SaltDatabaseService SaltService
 @inject SelectedSubstancesService SelectionService
 @inject WaterParametersService WaterParamsService
+@inject PersistenceService PersistenceService
 @implements IAsyncDisposable
     
 <PageTitle>Nutrient Optimizer</PageTitle>
@@ -179,6 +180,40 @@ else
                     <MudStack Spacing="3">
                         @if (result.Success)
                         {
+                            <!-- Water Parameters Info -->
+                            <MudPaper Elevation="0" Class="pa-4" Style="background-color: #f0f8ff; border-left: 4px solid #2196f3;">
+                                <MudStack Spacing="2">
+                                    <MudText Typo="Typo.subtitle2" Style="color: #1565c0; font-weight: 500;">💧 Water Parameters Applied</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #666;">The following ions from your local water supply have been subtracted from plant profile requirements:</MudText>
+                                    <MudStack Row="true" Spacing="2" Style="flex-wrap: wrap;">
+                                        @if (WaterParameters.Nitrate > 0)
+                                        {
+                                            <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">NO₃⁻: @WaterParameters.Nitrate.ToString("F1") ppm</MudChip>
+                                        }
+                                        @if (WaterParameters.Calcium > 0)
+                                        {
+                                            <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">Ca²⁺: @WaterParameters.Calcium.ToString("F1") ppm</MudChip>
+                                        }
+                                        @if (WaterParameters.Magnesium > 0)
+                                        {
+                                            <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">Mg²⁺: @WaterParameters.Magnesium.ToString("F1") ppm</MudChip>
+                                        }
+                                        @if (WaterParameters.Potassium > 0)
+                                        {
+                                            <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">K⁺: @WaterParameters.Potassium.ToString("F1") ppm</MudChip>
+                                        }
+                                        @if (WaterParameters.Sulfur > 0)
+                                        {
+                                            <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">SO₄²⁻: @WaterParameters.Sulfur.ToString("F1") ppm</MudChip>
+                                        }
+                                        @if (WaterParameters.GetTotalDissolved() == 0)
+                                        {
+                                            <MudText Typo="Typo.caption" Style="color: #999; font-style: italic;">No water parameters set - using pure water baseline</MudText>
+                                        }
+                                    </MudStack>
+                                </MudStack>
+                            </MudPaper>
+
                             <!-- Recipe Display -->
                             <MudPaper Elevation="0" Class="pa-4" Style="background-color: #f0f7f0; border-left: 4px solid #4caf50;">
                                 <MudStack Spacing="2">
@@ -188,9 +223,19 @@ else
                                         <MudStack Spacing="1">
                                             @foreach (var kv in result.SaltAmounts.OrderBy(k => k.Key.Name))
                                             {
+                                                var saltName = kv.Key.Name;
+                                                var amount = kv.Value;
+                                                
                                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                                    <MudText Typo="Typo.body2" Style="min-width: 200px;">@kv.Key.Name</MudText>
-                                                    <MudText Typo="Typo.body2" Style="font-weight: 500; font-family: monospace;">@kv.Value.ToString("F4") g/L</MudText>
+                                                    <MudText Typo="Typo.body2" Style="min-width: 200px;">@saltName</MudText>
+                                                    <MudNumericField @bind-Value="amount" 
+                                                                     Label="g/L" 
+                                                                     Min="0" 
+                                                                     Step="0.0001"
+                                                                     Variant="Variant.Outlined"
+                                                                     Style="min-width: 150px;"
+                                                                     @onchange="@((ChangeEventArgs e) => UpdateSaltAmount(saltName, Convert.ToDouble(e?.Value ?? 0.0d)))" />
+                                                    <MudText Typo="Typo.caption" Style="color: #999;">@amount.ToString("F4")</MudText>
                                                 </MudStack>
                                             }
                                         </MudStack>
@@ -279,16 +324,47 @@ else
     private bool isButtonDisabled = false;
     private OptimizationResult? result;
     private bool isCalculating = false;
+    private bool isInitialized = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
             AvailableProfiles = PlantProfileLibrary.Profiles.ToList();
             AllSalts = SaltService.GetAllSalts();
-            WaterParameters = WaterParamsService.GetParameters();
+            
+            // Subscribe to events FIRST
             SelectionService.OnSelectionChanged += OnSaltSelectionChanged;
             WaterParamsService.OnParametersChanged += OnWaterParametersChanged;
+            
+            // Load saved settings from localStorage
+            var savedSettings = await PersistenceService.LoadSettingsAsync();
+            if (savedSettings != null)
+            {
+                Console.WriteLine("Loading saved settings from localStorage");
+                selectedProfileIndex = savedSettings.SelectedProfileIndex;
+                WaterParameters = savedSettings.WaterParameters;
+                
+                // Restore selected salts
+                if (savedSettings.SelectedSalts.Count > 0 && AllSalts != null)
+                {
+                    Console.WriteLine($"[Home] Restoring {savedSettings.SelectedSalts.Count} selected salts");
+                    SelectionService.SetSelections(savedSettings.SelectedSalts, AllSalts);
+                    Console.WriteLine($"[Home] Selection service now has {SelectionService.GetSelectedCount()} salts");
+                }
+                else
+                {
+                    Console.WriteLine("[Home] No salts to restore or AllSalts is null");
+                }
+            }
+            else
+            {
+                Console.WriteLine("[Home] No saved settings found");
+                WaterParameters = WaterParamsService.GetParameters();
+            }
+            
+            isInitialized = true;
+            Console.WriteLine("Home.razor initialized");
         }
         catch (Exception ex)
         {
@@ -299,10 +375,24 @@ else
     private void OnProfileChanged(int value)
     {
         selectedProfileIndex = value;
+        if (isInitialized)
+        {
+            _ = SaveSettingsAsync();
+        }
     }
 
     private void OnSaltSelectionChanged()
     {
+        Console.WriteLine($"[Home] Salt selection changed, now have {SelectionService.GetSelectedCount()} salts");
+        
+        if (isInitialized)
+        {
+            _ = SaveSettingsAsync();
+        }
+        
+        // Force UI update
+        StateHasChanged();
+        
         // Auto-recalculate if we have both profile and salts selected
         if (selectedProfileIndex >= 0 && SelectedSaltsList.Count > 0 && !isCalculating)
         {
@@ -313,10 +403,35 @@ else
     private void OnWaterParametersChanged()
     {
         WaterParameters = WaterParamsService.GetParameters();
+        Console.WriteLine($"Water parameters updated: NO₃⁻={WaterParameters.Nitrate}, Ca²⁺={WaterParameters.Calcium}, Mg²⁺={WaterParameters.Magnesium}, K⁺={WaterParameters.Potassium}, SO₄²⁻={WaterParameters.Sulfur}");
+        StateHasChanged();
+        if (isInitialized)
+        {
+            _ = SaveSettingsAsync();
+        }
         // Auto-recalculate with new water parameters
         if (selectedProfileIndex >= 0 && SelectedSaltsList.Count > 0 && !isCalculating)
         {
             _ = Calculate();
+        }
+    }
+
+    private async Task SaveSettingsAsync()
+    {
+        try
+        {
+            var settings = new AppSettings
+            {
+                SelectedProfileIndex = selectedProfileIndex,
+                WaterParameters = WaterParameters,
+                SelectedSalts = SelectionService.GetSelectionsForStorage(),
+                LastSaved = DateTime.UtcNow
+            };
+            await PersistenceService.SaveSettingsAsync(settings);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving settings: {ex.Message}");
         }
     }
 
@@ -330,7 +445,7 @@ else
     private void ClearAllSalts()
     {
         SelectionService.ClearSelection();
-        // Calculate will call StateHasChanged when done
+        OnSaltSelectionChanged();
     }
 
     private async Task Calculate()
@@ -403,9 +518,56 @@ else
         };
     }
 
+    private void UpdateSaltAmount(string saltName, double newAmount)
+    {
+        if (result?.SaltAmounts == null) return;
+
+        var saltToUpdate = result.SaltAmounts.Keys.FirstOrDefault(s => s.Name == saltName);
+        if (saltToUpdate != null)
+        {
+            result.SaltAmounts[saltToUpdate] = newAmount;
+            // Recalculate ion comparisons based on new salt amounts
+            RecalculateIonComparisons();
+            StateHasChanged();
+        }
+    }
+
+    private void RecalculateIonComparisons()
+    {
+        if (result?.SaltAmounts == null || SelectedSaltsList.Count == 0) return;
+
+        // Recalculate actual ion concentrations from modified salt amounts
+        var ionConcentrations = new Dictionary<Ion, double>();
+        foreach (var salt in result.SaltAmounts.Keys)
+        {
+            double gramsPerLiter = result.SaltAmounts[salt];
+            foreach (var (ion, massPerMole) in salt.IonContributions)
+            {
+                double coeff = massPerMole * 1000.0 / salt.MolecularWeight;
+                double ppm = gramsPerLiter * coeff;
+
+                if (!ionConcentrations.ContainsKey(ion))
+                    ionConcentrations[ion] = 0;
+
+                ionConcentrations[ion] += ppm;
+            }
+        }
+
+        // Update ion comparisons
+        foreach (var comparison in result.IonComparisons)
+        {
+            comparison.ActualPpm = ionConcentrations.GetValueOrDefault(comparison.Ion, 0.0);
+            comparison.DeltaPpm = comparison.ActualPpm - comparison.TargetPpm;
+            comparison.InRange = comparison.ActualPpm >= comparison.TargetPpm - 1 && 
+                                comparison.ActualPpm <= comparison.TargetPpm + 1;
+        }
+    }
+
     async ValueTask IAsyncDisposable.DisposeAsync()
     {
         SelectionService.OnSelectionChanged -= OnSaltSelectionChanged;
         WaterParamsService.OnParametersChanged -= OnWaterParametersChanged;
+        // Save settings one last time on dispose
+        await SaveSettingsAsync();
     }
 }
